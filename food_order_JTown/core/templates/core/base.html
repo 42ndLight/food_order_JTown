@@ -27,7 +27,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'users:logout' %}">Logout</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'users:staff_login' %}">Login</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'users:register' %}">Register</a></li>
                     {% endif %}
                 </ul>
