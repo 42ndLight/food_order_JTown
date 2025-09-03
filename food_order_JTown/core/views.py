@@ -1,6 +1,29 @@
-from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
 
 # Create your views here.
 class HomeView(TemplateView):
     template_name = 'core/home.html'
+
+
+''' if not request.user.is_authenticated or request.user.role != 'customer':
+        return HttpResponseForbidden("Access denied. Please log in as a customer.")'''
+def customer_dashboard(request):   
+    return render(request, 'core/customer_dashboard.html', {'user': request.user})
+
+@login_required
+def staff_dashboard(request):
+    if request.user.role not in ['admin', 'staff', 'owner']:
+        return HttpResponseForbidden("Access denied.")
+    return render(request, 'core/staff_dashboard.html', {'user': request.user})
+
+def menu(request):
+    return render(request, 'core/menu.html')
+
+def contact(request):
+    return render(request, 'core/contact.html')
+
+def about(request):
+    return render(request, 'core/about.html')
