@@ -7,9 +7,10 @@ from django.conf import settings
 from .models import OTP, CustomUser
 from django.views.generic import FormView
 from django.http import HttpResponseForbidden, HttpResponseRedirect
-import africastalking
+#import africastalking
 from django.utils import timezone
 import uuid
+from django.views.decorators.http import require_http_methods
 
 # Create your views here.
 '''africastalking.initialize(settings.AFRICASTALKING_USERNAME, settings.AFRICASTALKING_API_KEY)
@@ -125,12 +126,12 @@ class CustomerVerifyOTPView(FormView):
             form.add_error('otp_code', 'Invalid or expired OTP.')
             return self.form_invalid(form)
 
-            
+@require_http_methods(["GET"])            
 def logout_view(request):
     logout(request)
     return redirect('core:home')
 
-
+@require_http_methods(["POST"])
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)

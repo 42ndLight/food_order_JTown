@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from datetime import timedelta
 from django.utils import timezone
-import random
 import string
+import secrets
 
 # Create your models here.
 class CustomUserManager(BaseUserManager):
@@ -29,7 +29,8 @@ class CustomUserManager(BaseUserManager):
             return self.create_user(phone_no=phone_no, role='customer')
             
 
-    def create_superuser(self, username, password, **extra_fields):
+    def create_superuser(self, username, password, phone_no, **extra_fields):
+        extra_fields.update(phone_no=phone_no)
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', 'admin')
@@ -56,7 +57,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['role']
+    REQUIRED_FIELDS = ['role', 'phone_no`']
 
 
 
@@ -80,7 +81,17 @@ class OTP(models.Model):
 
 
     @classmethod
-    def generate_otp(cls, user):
-        code = ''.join(random.choices(string.digits, k=6))
+    def generate_otp(cls, user, alphanumeric = True, length=6):
+        if alphanumeric:
+        # Use uppercase letters and digits for better readability
+            alphabet = string.ascii_uppercase + string.digits
+        # Remove potentially confusing characters
+            alphabet = alphabet.replace('0', '').replace('O', '').replace('I', '').replace('1', '')
+        else:
+        # Numeric only
+            alphabet = string.digits
+    
+    # Generate secure random code
+        code = ''.join(secrets.choice(alphabet) for _ in range(length))        
         expires_at = timezone.now() + timedelta(minutes=30)
         return cls.objects.create(user=user, code=code, expires_at=expires_at)
