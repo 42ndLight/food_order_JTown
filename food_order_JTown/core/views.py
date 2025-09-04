@@ -10,12 +10,12 @@ class HomeView(TemplateView):
     template_name = 'core/home.html'
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def customer_dashboard(request):   
     return render(request, 'core/customer_dashboard.html', {'user': request.user})
 
 @login_required
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def staff_dashboard(request):
     if request.user.role not in ['admin', 'staff', 'owner']:
         return HttpResponseForbidden("Access denied.")

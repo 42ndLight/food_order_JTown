@@ -7,14 +7,12 @@ from django.conf import settings
 from .models import OTP, CustomUser
 from django.views.generic import FormView
 from django.http import HttpResponseForbidden, HttpResponseRedirect
-#import africastalking
 from django.utils import timezone
 import uuid
 from django.views.decorators.http import require_http_methods
 
 # Create your views here.
-'''africastalking.initialize(settings.AFRICASTALKING_USERNAME, settings.AFRICASTALKING_API_KEY)
-sms = africastalking.SMS'''
+
 
 from django.conf import settings
 
@@ -28,19 +26,19 @@ def send_otp_sms(phone_no, code):
     except Exception as e:
         print(f"SMS error: {e}")
 
-
+url_home = 'core:home'
 
 class StaffLoginView(LoginView):
     template_name = 'users/staff_login.html'
     form_class = StaffLoginForm
     redirect_authenticated_user = True
-    success_url = reverse_lazy('core:home')
+    success_url = reverse_lazy(url_home)
 
     def get_success_url(self):
         user = self.request.user
         if user.role in ['admin', 'staff', 'owner']:
             return reverse_lazy('core:staff_dashboard')
-        return reverse_lazy('core:home')
+        return reverse_lazy(url_home)
 
     def form_valid(self, form):
         user = form.get_user()
@@ -129,7 +127,7 @@ class CustomerVerifyOTPView(FormView):
 @require_http_methods(["GET"])            
 def logout_view(request):
     logout(request)
-    return redirect('core:home')
+    return redirect(url_home)
 
 @require_http_methods(["POST"])
 def register(request):
