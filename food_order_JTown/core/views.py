@@ -38,7 +38,7 @@ class MenuView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['categories'] = MenuItem.objects.values_list('category_id__name', flat=True).distinct()
+        items_by_category = [(c, MenuItem.objects.filter(category_id__name=c)) for c in Category.objects.all()]
+        context['items_by_category'] = items_by_category
         return context
-
 
