@@ -1,13 +1,18 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 {% block content %}
 <link rel="stylesheet" type="text/css" href="{% static 'core/css/style.css' %}">
 
     <div class="container my-5 ">
         <h1 class="text-center mb-4">Our Menu</h1>
+        <button type="button" class="btn btn-primary float-end">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
+            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+          </svg>
+        View to Cart</button>
         <!-- Category Filters -->
         <div class="d-flex justify-content-center flex-wrap mb-4">
-            <span class="category-filter active" data-category="all">All</span>
+            <span class="category-filter active " data-category="all">All</span>
             {% for category in categories %}
                 <span class="category-filter" data-category="{{ category }}">{{ category }}</span>
             {% endfor %}
@@ -20,7 +25,7 @@
                     <div class="row">
                       {% for item in items %}
                         <div class="col-md-4 col-sm-6 mb-4 " data-category="{{ item.category_id.name }}">
-                          <div class="card menu-item-card menu-item-img">
+                          <div class="card menu-item-card ">
                             {% if item.image %}
                               <img src="{{ item.image.url }}" class="card-img-top menu-item-img" alt="{{ item.name }}">
                             {% else %}
@@ -31,6 +36,15 @@
                               <p class="card-text">{{ item.description|truncatewords:20 }}</p>
                               <p class="card-text"><strong>Price:</strong> ${{ item.price }}</p>
                               <p class="card-text"><small class="text-muted">Category: {{ item.category_id.name }}</small></p>
+                              <!-- Inside the menu-item card-body -->
+                              <form method="POST" action="{% url 'cart_add' %}">
+                                  {% csrf_token %}
+                                  <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+                                  <div class="input-group mb-2">
+                                      <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 80px;">
+                                      <button type="submit" class="btn btn-primary">Add to Cart</button>
+                                  </div>
+                              </form>
                             </div>
                           </div>
                         </div>
