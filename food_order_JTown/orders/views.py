@@ -17,6 +17,9 @@ def save_cart(request, cart):
 
 # --- 1. Add to Cart ---
 class CartAddView(View):
+    model = OrderItem
+    form_class= OrderItemForm
+    
     def post(self, request, *args, **kwargs):
         form = OrderItemForm(request.POST)
         if form.is_valid():
@@ -41,7 +44,7 @@ class CartAddView(View):
             messages.success(request, f"{menu_item.name} added to cart!")
             return redirect("core:menu") 
         else:
-            messages.error(request, "Invalid item or quantity.")
+            #messages.error(request, "Invalid item or quantity.")
             return redirect("core:menu")  
 
 # --- 2. View Cart ---

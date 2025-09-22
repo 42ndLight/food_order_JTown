@@ -6,9 +6,14 @@ User = get_user_model()
 
 # Create your models here.
 class Order(models.Model):
+	STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('rejected', 'Rejected'),
+    ]
 	user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 	total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-	status= models.CharField(max_length=20, default='Pending')
+	status= models.CharField(max_length=20, choices= STATUS_CHOICES, default='Pending')
 	created_at = models.DateField(auto_now_add=True)
 
 	def __str__(self):
