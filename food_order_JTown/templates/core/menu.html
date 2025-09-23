@@ -40,7 +40,7 @@
                               <!-- Inside the menu-item card-body -->
                               <form method="POST" action="{% url 'orders:cart_add' %}">
                                   {% csrf_token %}
-                                  <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+                                  <input type="hidden" name="menu_item" value="{{ item.id }}">
                                   <div class="input-group mb-2">
                                       <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 80px;">
                                       <button type="submit" class="btn btn-primary">Add to Cart</button>

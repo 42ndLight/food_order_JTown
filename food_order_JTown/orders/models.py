@@ -9,7 +9,7 @@ class Order(models.Model):
 	STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
-        ('rejected', 'Rejected'),
+        ('in transit', 'In Transit'),
     ]
 	user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 	total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)

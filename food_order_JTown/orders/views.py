@@ -6,6 +6,10 @@ from django.urls import reverse_lazy
 from .forms import OrderForm, OrderItemForm
 from .models import Order, OrderItem
 from core.models import MenuItem
+from django.views.decorators.http import require_http_methods
+import logging
+
+logger = logging.getLogger(__name__)
 
 # --- Helpers for cart session ---
 def get_cart(request):
@@ -17,20 +21,24 @@ def save_cart(request, cart):
 
 # --- 1. Add to Cart ---
 class CartAddView(View):
-    model = OrderItem
-    form_class= OrderItemForm
-    
+    form_class = OrderItemForm
+
     def post(self, request, *args, **kwargs):
-        form = OrderItemForm(request.POST)
+        logger.debug(f"POST data: {request.POST}")
+        form = self.form_class(request.POST)
         if form.is_valid():
             menu_item = form.cleaned_data['menu_item']
             quantity = form.cleaned_data['quantity']
+            logger.info(f"Valid form: menu_item={menu_item.id}, quantity={quantity}")
             cart = get_cart(request)
 
             # Update or append item
             for item in cart:
                 if item["menu_item_id"] == menu_item.id:
-                    item["quantity"] += quantity
+                    item_quantity = item.get("quantity", 0) or 0
+                    new_quantity = quantity or 0
+                    item["quantity"] = int(item_quantity) + int(new_quantity)
+                    logger.debug(f"Updated existing item: {item}")
                     break
             else:
                 cart.append({
@@ -39,13 +47,16 @@ class CartAddView(View):
                     "price": str(menu_item.price),
                     "quantity": quantity,
                 })
+                logger.debug(f"Added new item: {menu_item.name}, quantity={quantity}")
 
             save_cart(request, cart)
             messages.success(request, f"{menu_item.name} added to cart!")
-            return redirect("core:menu") 
+            return redirect("core:menu")
         else:
-            #messages.error(request, "Invalid item or quantity.")
-            return redirect("core:menu")  
+            logger.error(f"Form invalid: {form.errors.as_json()}")
+            messages.error(request, f"Failed to add item to cart: {form.errors.as_text()}")
+            return redirect("core:menu")
+
 
 # --- 2. View Cart ---
 class CartDetailView(TemplateView):
@@ -61,6 +72,12 @@ class CartDetailView(TemplateView):
             "order_form": OrderForm(initial={'user': self.request.user if self.request.user.is_authenticated else None}),
         })
         return context
+
+@require_http_methods(["GET"])
+def clear_cart(request):
+    save_cart(request, [])
+    messages.success(request, "Cart cleared.")
+    return redirect("core:menu")
 
 # --- 3. Checkout / Create Order ---
 class OrderCreateView(CreateView):
