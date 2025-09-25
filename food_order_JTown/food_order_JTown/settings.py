@@ -32,6 +32,20 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+from decouple import config
+
+MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET')
+MPESA_SHORTCODE = config('MPESA_SHORTCODE')  # PayBill/Till
+MPESA_PASSKEY = config('MPESA_PASSKEY')  # For STK Push
+MPESA_EXPRESS_SHORTCODE = config('MPESA_EXPRESS_SHORTCODE')
+MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL')  # e.g., https://yourdomain.com/mpesa/callback/
+MPESA_INITIATOR_USERNAME = config('INITIATOR_USERNAME')
+MPESA_INITIATOR_SECURITY_CREDENTIAL = config('INITIATOR_SECURITY_CREDENTIAL')
+MPESA_PASSKEY = config('MPESA_PASSKEY')
+MPESA_ENVIRONMENT = 'sandbox'  # Switch to 'production' later
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -46,7 +60,7 @@ INSTALLED_APPS = [
     'orders',
     'payments',
     'shop',
-    'django_svelte',
+    'django_daraja',
     
 ]
 

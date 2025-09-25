@@ -26,3 +26,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+// Login modal logic
+    const loginButtons = document.querySelectorAll('.login-prompt');
+    const loginModal = document.getElementById('loginModal');
+    const guestCheckoutButtons = document.querySelectorAll('.guest-checkout');
+
+    loginButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const itemId = button.getAttribute('data-item-id');
+            // Store item ID in modal for potential guest checkout
+            if (loginModal) {
+                const guestButton = loginModal.querySelector('.guest-checkout');
+                if (guestButton) {
+                    guestButton.setAttribute('data-item-id', itemId);
+                }
+            }
+        });
+    });
+

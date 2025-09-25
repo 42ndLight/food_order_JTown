@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-5">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2>Checkout</h2>
+                <p>Cart Total: KSh {{ order_total }}</p>
+                <p>Phone Number: {{ request.user.phone_no }}</p>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ order_form.as_p }}
+                    <button type="submit" class="btn btn-primary bottom-right float-end">Proceed to Payment</button>
+                </form>
+            </div>
+        </div>
+        <a href="{% url 'orders:cart_detail' %}" class="btn btn-secondary">Back to Cart</a>
+</div>
+{% endblock %}

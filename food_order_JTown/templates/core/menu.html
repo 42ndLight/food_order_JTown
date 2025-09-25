@@ -37,16 +37,25 @@
                               <p class="card-text">{{ item.description|truncatewords:20 }}</p>
                               <p class="card-text"><strong>Price:</strong> ${{ item.price }}</p>
                               <p class="card-text"><small class="text-muted">Category: {{ item.category_id.name }}</small></p>
-                              <!-- Inside the menu-item card-body -->
-                              <form method="POST" action="{% url 'orders:cart_add' %}">
-                                  {% csrf_token %}
-                                  <input type="hidden" name="menu_item" value="{{ item.id }}">
-                                  <div class="input-group mb-2">
-                                      <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 80px;">
-                                      <button type="submit" class="btn btn-primary">Add to Cart</button>
-                                  </div>
-                              </form>
-                            </div>
+                              <{% if user.is_authenticated %}
+                                        <form method="POST" action="{% url 'orders:cart_add' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="menu_item" value="{{ item.id }}">
+                                            <div class="input-group mb-2">
+                                                <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 80px;">
+                                                <button type="submit" class="btn btn-primary">Add to Cart</button>
+                                            </div>
+                                        </form>
+                              {% else %}
+                                        <button 
+                                        type="button" 
+                                        class="btn btn-primary login-prompt" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#loginModal" data-item-id="{{ item.id }}">
+                                      Add to Cart
+                                    </button>
+                              {% endif %}
+                              </div>
                           </div>
                         </div>
                       {% empty %}
@@ -57,6 +66,30 @@
             {% endfor %}
         </div>
     </div>
+
+    <!-- Login Prompt Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">Please Log In</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>You need to log in to add items to your cart. This allows you to track your orders and earn loyalty points!</p>
+                <!-- Optional: Guest checkout option -->
+                <!-- <p>Or, continue as a guest to add items without an account.</p> -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'users:customer_send_otp' %}" class="btn btn-primary">Log In</a>
+                <!-- Optional: Guest checkout button -->
+                <!-- <button type="button" class="btn btn-outline-primary guest-checkout" data-item-id="">Continue as Guest</button> -->
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <script src="{% static 'core/js/menu.js' %}"></script>
 {% endblock %}

@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from .forms import OrderForm, OrderItemForm
 from .models import Order, OrderItem
 from core.models import MenuItem
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 import logging
 
@@ -23,6 +24,7 @@ def save_cart(request, cart):
 class CartAddView(View):
     form_class = OrderItemForm
 
+    
     def post(self, request, *args, **kwargs):
         logger.debug(f"POST data: {request.POST}")
         form = self.form_class(request.POST)
@@ -84,7 +86,7 @@ class OrderCreateView(CreateView):
     model = Order
     form_class = OrderForm
     template_name = "orders/checkout.html"
-    success_url = reverse_lazy("order_success")
+    success_url = reverse_lazy("order_success") # move to this : payments:mpesa_initiate
 
     def form_valid(self, form):
         cart = get_cart(self.request)
@@ -95,7 +97,9 @@ class OrderCreateView(CreateView):
         order = form.save(commit=False)
         if self.request.user.is_authenticated:
             order.user = self.request.user
-        order.save()
+            order.total_price = sum(float(item["price"]) * item["quantity"] for item in cart)
+            order.status = 'pending' 
+            order.save()
 
         # Create OrderItems (signals will handle total_price)
         for item in cart:
@@ -106,6 +110,10 @@ class OrderCreateView(CreateView):
                 quantity=item["quantity"],
                 price=menu_item.price,
             )
+
+        self.request.session['pending_order_id'] = order.id
+        self.request.session['order_total'] = str(order.total_price)
+        self.request.session['order_phone'] = self.request.user.phone_no 
 
         save_cart(self.request, [])  # Clear cart
         messages.success(self.request, "Order placed successfully!")
