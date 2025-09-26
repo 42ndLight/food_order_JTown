@@ -86,10 +86,21 @@ class OrderCreateView(CreateView):
     model = Order
     form_class = OrderForm
     template_name = "orders/checkout.html"
-    success_url = reverse_lazy("order_success") # move to this : payments:mpesa_initiate
+    success_url = reverse_lazy("payments:mpesa_initiate")  # Redirect to payment initiation
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cart = get_cart(self.request)
+        cart_total = sum(float(item["price"]) * item["quantity"] for item in cart) if cart else 0
+        context.update({
+            'cart_total': cart_total,
+            'phone_number': self.request.user.phone_no if self.request.user.is_authenticated else None,
+        })
+        return context
 
     def form_valid(self, form):
         cart = get_cart(self.request)
+        logger.info(f"Valid form: cart={cart}")
         if not cart:
             messages.error(self.request, "Cart is empty.")
             return redirect("cart_detail")
@@ -98,10 +109,11 @@ class OrderCreateView(CreateView):
         if self.request.user.is_authenticated:
             order.user = self.request.user
             order.total_price = sum(float(item["price"]) * item["quantity"] for item in cart)
-            order.status = 'pending' 
-            order.save()
+            order.status = 'pending'
+            logger.debug(f"Valid form: user={self.request.user}, total_price={order.total_price}")
+        order.save()
 
-        # Create OrderItems (signals will handle total_price)
+        # Create OrderItems
         for item in cart:
             menu_item = MenuItem.objects.get(id=item["menu_item_id"])
             OrderItem.objects.create(
@@ -113,7 +125,8 @@ class OrderCreateView(CreateView):
 
         self.request.session['pending_order_id'] = order.id
         self.request.session['order_total'] = str(order.total_price)
-        self.request.session['order_phone'] = self.request.user.phone_no 
+        self.request.session['order_phone'] = self.request.user.phone_no
+        logger.debug(f"Valid form: order_id={order.id}, total_price={order.total_price}")
 
         save_cart(self.request, [])  # Clear cart
         messages.success(self.request, "Order placed successfully!")
@@ -122,3 +135,22 @@ class OrderCreateView(CreateView):
 # --- 4. Order Success ---
 class OrderSuccessView(TemplateView):
     template_name = "orders/order_success.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        order_id = self.request.session.get('pending_order_id')
+        order = Order.objects.get(id=order_id) if order_id else None
+        context['order'] = order
+        return context
+
+# --- 5. Cancel Order ---
+class OrderCancelView(View):
+    def get(self, request):
+        order_id = request.session.get('pending_order_id')
+        if order_id:
+            order = Order.objects.get(id=order_id)
+            order.status = 'cancelled'
+            order.save()
+            messages.success(request, "Order cancelled.")
+            del request.session['pending_order_id']
+        return redirect("core:menu")
