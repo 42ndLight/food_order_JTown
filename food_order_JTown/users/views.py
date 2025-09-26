@@ -96,31 +96,55 @@ class CustomerVerifyOTPView(FormView):
 
         otp_code = form.cleaned_data['otp_code']
         user_id = self.request.session.get('otp_user_id')
+        
         if not user_id:
             return redirect('users:customer_send_otp')
 
         try:
-            user = CustomUser.objects.get(id=user_id)
+            original_user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             form.add_error(None, 'User not found. Please request a new OTP.')
             return self.form_invalid(form)
 
-        logger.debug(f"Attempting authenticate with user={user.id}, otp_code={otp_code}")
-        user = authenticate(request=self.request, user=user, otp_code=otp_code)
-        if user is not None:
-            logger.debug(f"Authentication successful for user={user.id}")
-            login(self.request, user, backend='users.backend.OTPBackend')
-            # Clear session keys
-            if 'otp_user_id' in self.request.session:
-                del self.request.session['otp_user_id']
-            if 'otp_token' in self.request.session:
-                del self.request.session['otp_token']
-            if 'debug_otp' in self.request.session:
-                del self.request.session['debug_otp']
+        logger.debug(f"Attempting authenticate with user={original_user.id}, otp_code={otp_code}")
+        
+        # Authenticate returns a user object or None
+        authenticated_user = authenticate(request=self.request, user=original_user, otp_code=otp_code)
+        
+        if authenticated_user is not None:
+            logger.debug(f"Authentication successful for user={authenticated_user.id}")
+            
+            # Debug session before login
+            logger.debug(f"Session key before login: {self.request.session.session_key}")
+            logger.debug(f"Session items before login: {dict(self.request.session.items())}")
+            
+            # Login the user - try without specifying backend first
+            login(self.request, authenticated_user)
+            
+            # Debug session after login
+            logger.debug(f"Session key after login: {self.request.session.session_key}")
+            logger.debug(f"User authenticated: {self.request.user.is_authenticated}")
+            logger.debug(f"User ID: {self.request.user.id if self.request.user.is_authenticated else 'Anonymous'}")
+            logger.debug(f"Session items after login: {dict(self.request.session.items())}")
+            
+            # Force session save
+            self.request.session.save()
+            
+            # Clear OTP session keys
+            session_keys_to_clear = ['otp_user_id', 'otp_token', 'debug_otp']
+            for key in session_keys_to_clear:
+                if key in self.request.session:
+                    del self.request.session[key]
+            
+            # Save session again after clearing keys
+            self.request.session.save()
+            
+            logger.debug(f"Final session items: {dict(self.request.session.items())}")
             logger.debug(f"Redirecting to {self.get_success_url()}")
+            
             return HttpResponseRedirect(self.get_success_url())
         else:
-            logger.debug(f"Authentication failed for user={user.id}, otp_code={otp_code}")
+            logger.debug(f"Authentication failed for user={original_user.id}, otp_code={otp_code}")
             form.add_error('otp_code', 'Invalid or expired OTP.')
             return self.form_invalid(form)
 
