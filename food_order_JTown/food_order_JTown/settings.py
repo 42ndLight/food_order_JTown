@@ -30,7 +30,8 @@ SECRET_KEY = config('KEY_SEC')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","127.0.0.1").split(",")
+ALLOWED_HOSTS =['.ngrok-free.app', '127.0.0.1',]
+#CSRF_TRUSTED_ORIGINS = ['https://bd3d733a4bd1.ngrok-free.app']
 
 
 

@@ -86,7 +86,7 @@ class OrderCreateView(CreateView):
     model = Order
     form_class = OrderForm
     template_name = "orders/checkout.html"
-    success_url = reverse_lazy("payments:mpesa_initiate")  # Redirect to payment initiation
+    success_url = reverse_lazy("payments:mpesapush")  # Redirect to payment initiation
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -103,7 +103,7 @@ class OrderCreateView(CreateView):
         logger.info(f"Valid form: cart={cart}")
         if not cart:
             messages.error(self.request, "Cart is empty.")
-            return redirect("cart_detail")
+            return redirect("orders:cart_detail")
 
         order = form.save(commit=False)
         if self.request.user.is_authenticated:

@@ -37,7 +37,7 @@
                               <p class="card-text">{{ item.description|truncatewords:20 }}</p>
                               <p class="card-text"><strong>Price:</strong> ${{ item.price }}</p>
                               <p class="card-text"><small class="text-muted">Category: {{ item.category_id.name }}</small></p>
-                              <{% if user.is_authenticated %}
+                              {% if user.is_authenticated %}
                                         <form method="POST" action="{% url 'orders:cart_add' %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="menu_item" value="{{ item.id }}">
