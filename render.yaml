@@ -13,7 +13,7 @@ services:
      python manage.py collectstatic --noinput &&
      python manage.py migrate
 
-    startCommand: gunicorn food_order_Jtown.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: gunicorn food_order_JTown.wsgi:application --bind 0.0.0.0:$PORT
 
     envVars:
       - key: PYTHON_VERSION
