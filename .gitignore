@@ -1,6 +1,7 @@
 env/
 food_order_JTown/.env
 .vscode
+.venv
 
 
 food_order_JTown/mpesa_diagno.py

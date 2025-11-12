@@ -6,14 +6,15 @@ services:
     plan: free
 
     rootDir: food_order_Jtown
-
+    
     buildCommand: >-
-      pip install --upgrade pip &&
-      pip install -r requirements.txt &&
-      python manage.py collectstatic --noinput &&
-      python manage.py migrate
+     cd food_order_Jtown &&
+     pip install --upgrade pip &&
+     pip install -r requirements.txt &&
+     python manage.py collectstatic --noinput &&
+     python manage.py migrate
 
-    startCommand: gunicorn food_order_Jtown.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: cd food_order_Jtown && gunicorn food_order_Jtown.wsgi:application --bind 0.0.0.0:$PORT
 
     envVars:
       - key: PYTHON_VERSION
