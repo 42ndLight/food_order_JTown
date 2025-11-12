@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     
-    rootDir: food_order_Jtown/food_order_Jtown
+    rootDir: food_order_JTown
 
     buildCommand: >-
      pip install --upgrade pip &&
