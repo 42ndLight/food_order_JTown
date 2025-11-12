@@ -14,7 +14,7 @@ from pathlib import Path
 from decouple import config
 import os
 from decouple import config
-
+import  dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -30,10 +30,12 @@ SECRET_KEY = config('KEY_SEC')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS =['.ngrok-free.app', '127.0.0.1',]
-#CSRF_TRUSTED_ORIGINS = ['https://bd3d733a4bd1.ngrok-free.app']
+ALLOWED_HOSTS =['.onrender.com','.ngrok-free.app', '127.0.0.1',]
 
 
+TWILIO_ACCOUNT_SID =config("MY_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN")
+TWILIO_NUMBER =config("MY_TWILIO_NUMBER")
 
 
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY')
@@ -100,15 +102,7 @@ WSGI_APPLICATION = 'food_order_JTown.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': config('ENGINE'),
-        'NAME': config('NAME'),
-        'USER': 'food_app',
-        'PASSWORD': config('PASSWORD'), 
-        'HOST': config('HOST'),
-        'PORT': config('PORT'),
-    
-    }
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
 
@@ -159,6 +153,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
         BASE_DIR / 'static',
         ]
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

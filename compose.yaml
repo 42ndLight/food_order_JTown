@@ -11,6 +11,8 @@ services:
   server:
     build:
       context: .
+    env_file:
+      - food_order_JTown/.env
     ports:
       - 8000:8000
 

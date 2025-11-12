@@ -8,23 +8,30 @@ from .models import OTP, CustomUser
 from django.views.generic import FormView
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.utils import timezone
+from twilio.rest import Client
 import uuid
 from django.views.decorators.http import require_http_methods
 
 # Create your views here.
 
-
-from django.conf import settings
-
 def send_otp_sms(phone_no, code):
-    message = f"Your JTown Burgers OTP is {code}. Valid for 30 minutes."
+    # Ensure phone_no like '+2547XXXXXXXX' and your TWILIO_NUMBER is WhatsApp-enabled
+    message_text = f"Your JTown Burgers OTP is {code}. Valid for 30 minutes."
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
     if settings.DEBUG:
-        print(f"OTP for {phone_no}: {code}")  # Log OTP to console for testing
+        print(f"OTP for {phone_no}: {code}")
+        print(type(client))
+        # Optionally still send in DEBUG for end-to-end testing: set an env flag to control this
         return
-    try:
-        sms.send(message, [phone_no])
+    try: 
+        client.messages.create(
+            from_=f"whatsapp:{settings.TWILIO_NUMBER}",
+            to=f"whatsapp:{phone_no}",
+            body=message_text,
+        )
     except Exception as e:
-        print(f"SMS error: {e}")
+        print(f"WhatsApp send error: {e}")
 
 url_home = 'core:home'
 
