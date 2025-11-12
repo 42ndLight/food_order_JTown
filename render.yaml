@@ -2,7 +2,7 @@ services:
   - type: web
     name: my-django-site
     env: python
-    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    buildCommand: pip install -r requirements.txt && python3 food_order_Jtown/manage.py migrate
     startCommand: gunicorn food_order_Jtown.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
