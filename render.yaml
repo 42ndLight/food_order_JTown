@@ -4,8 +4,6 @@ services:
     env: python
     region: oregon
     plan: free
-
-    rootDir: food_order_Jtown
     
     buildCommand: >-
      cd food_order_Jtown &&
