@@ -1,18 +1,109 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
 <div class="container my-5">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h2>Checkout</h2>
-                <p>Cart Total: KSh {{ cart_total }}</p>
-                <p>Phone Number: {{ phone_number }}</p>
+    <div class="text-center mb-5">
+        <div class="mono-label text-primary mb-2">Final Step</div>
+        <h1 class="display-title">CHECKOUT</h1>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card p-4 h-100" style="background: #fff; border-radius: var(--radius-md); border: 1.5px solid rgba(15,13,10,.08);">
+                <h3 class="mb-4">Order Information</h3>
                 <form method="POST">
                     {% csrf_token %}
-                    {{ order_form.as_p }}
-                    <button type="submit" class="btn btn-primary bottom-right float-end">Proceed to Payment</button>
+                    <!-- We display the info captured in the cart but allow refinement if needed -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">BUILDING NAME</label>
+                            {{ order_form.building_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">STREET</label>
+                            {{ order_form.street }}
+                        </div>
+                        <div class="col-12">
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">DETAILED ADDRESS</label>
+                            {{ order_form.address }}
+                        </div>
+                        
+                        <!-- Hidden fields -->
+                        {{ order_form.user }}
+                        {{ order_form.latitude }}
+                        {{ order_form.longitude }}
+                        {{ order_form.delivery_fee }}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-5">
+                        <a href="{% url 'orders:cart_detail' %}" class="btn-jtown-outline text-decoration-none">Back to Cart</a>
+                        <button type="submit" class="btn-jtown-secondary">Confirm & Pay →</button>
+                    </div>
                 </form>
             </div>
         </div>
-        <a href="{% url 'orders:cart_detail' %}" class="btn btn-secondary">Back to Cart</a>
+        
+        <div class="col-md-4">
+            <div class="card p-4" style="background: var(--color-ink); color: var(--color-paper); border-radius: var(--radius-md); border: none;">
+                <h3 class="mb-4" style="color: var(--color-paper);">Summary</h3>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="mono-label text-ash">Items Total</span>
+                    <span class="mono-label">KES {{ cart_total }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-3 pb-3 border-bottom" style="border-color: rgba(245,240,232,0.1) !important;">
+                    <span class="mono-label text-ash">Delivery Fee</span>
+                    <!-- Note: We'll need a way to pass the delivery fee here if it's dynamic -->
+                    <span class="mono-label" id="checkout-delivery-fee">KES 150.00</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="mono-label" style="color: var(--color-gold);">Grand Total</span>
+                    <span class="display-title" id="checkout-grand-total" style="font-size: 1.5rem; color: var(--color-gold);">KES {{ cart_total }}</span>
+                </div>
+
+                <div class="p-3" style="background: rgba(245,240,232,0.05); border-radius: var(--radius-sm);">
+                    <div class="mono-label mb-1" style="font-size: 10px; color: var(--color-ash);">PAYMENT METHOD</div>
+                    <div class="mono-label" style="font-size: 12px;">M-PESA (STK Push)</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Simple logic to sync the summary total with the hidden delivery fee field
+        const feeInput = document.querySelector('input[name="delivery_fee"]');
+        const subtotal = parseFloat("{{ cart_total }}");
+        const grandTotalElem = document.getElementById('checkout-grand-total');
+        const feeDisplay = document.getElementById('checkout-delivery-fee');
+
+        if (feeInput && feeInput.value) {
+            const fee = parseFloat(feeInput.value);
+            feeDisplay.textContent = `KES ${fee.toFixed(2)}`;
+            grandTotalElem.textContent = `KES ${(subtotal + fee).toFixed(2)}`;
+        }
+    });
+</script>
+
+<style>
+    /* Style form controls to match design system */
+    input[type="text"], input[type="tel"], textarea, select {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(15,13,10,.1);
+        font-family: var(--font-body);
+        font-size: 13px;
+        transition: var(--transition-fast);
+    }
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: var(--color-ink);
+        background-color: #fff;
+    }
+</style>
 {% endblock %}

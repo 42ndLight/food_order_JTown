@@ -1,6 +1,6 @@
 from django.views import View
 from django.views.generic import TemplateView, CreateView
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.urls import reverse_lazy
 from .forms import OrderForm, OrderItemForm
@@ -52,6 +52,12 @@ class CartAddView(View):
                 logger.debug(f"Added new item: {menu_item.name}, quantity={quantity}")
 
             save_cart(request, cart)
+
+            if request.headers.get('HX-Request'):
+                # Calculate new count for the partial
+                count = sum(item.get('quantity', 0) for item in cart)
+                return render(request, "components/cart_badge_partial.html", {'cart_count': count})
+
             messages.success(request, f"{menu_item.name} added to cart!")
             return redirect("core:menu")
         else:
@@ -71,7 +77,6 @@ class CartDetailView(TemplateView):
         context.update({
             "cart": cart,
             "cart_total": cart_total,
-            "order_form": OrderForm(initial={'user': self.request.user if self.request.user.is_authenticated else None}),
         })
         return context
 
@@ -106,11 +111,28 @@ class OrderCreateView(CreateView):
             return redirect("orders:cart_detail")
 
         order = form.save(commit=False)
+        
+        # Capture location fields from POST
+        order.address = self.request.POST.get('address', '')
+        order.building_name = self.request.POST.get('building_name', '')
+        order.street = self.request.POST.get('street', '')
+        
+        try:
+            order.latitude = self.request.POST.get('latitude') or None
+            order.longitude = self.request.POST.get('longitude') or None
+            order.delivery_fee = float(self.request.POST.get('delivery_fee', 0))
+        except (ValueError, TypeError):
+            order.delivery_fee = 0
+
         if self.request.user.is_authenticated:
             order.user = self.request.user
-            order.total_price = sum(float(item["price"]) * item["quantity"] for item in cart)
-            order.status = 'pending'
-            logger.debug(f"Valid form: user={self.request.user}, total_price={order.total_price}")
+            
+        # Calculate total including delivery fee
+        cart_subtotal = sum(float(item["price"]) * item["quantity"] for item in cart)
+        order.total_price = cart_subtotal + order.delivery_fee
+        order.status = 'pending'
+        
+        logger.debug(f"Order created: {order.id}, total={order.total_price}, fee={order.delivery_fee}")
         order.save()
 
         # Create OrderItems

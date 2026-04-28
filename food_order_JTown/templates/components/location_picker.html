@@ -1,0 +1,128 @@
+{% load static %}
+<div class="card p-4 mt-4" style="background: #fff; border-radius: var(--radius-md); border: 1.5px solid rgba(15,13,10,.08);">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Delivery Location</h3>
+        <button id="use-current-location" type="button" class="btn-jtown-primary" style="font-size: 11px; padding: 6px 14px;">
+            📍 Use My Location
+        </button>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="mono-label" style="font-size: 10px; color: var(--color-ash);">BUILDING NAME</label>
+            <input type="text" name="building_name" id="id_building_name" placeholder="e.g. Westside Heights" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="mono-label" style="font-size: 10px; color: var(--color-ash);">STREET</label>
+            <input type="text" name="street" id="id_street" placeholder="e.g. Ring Road" class="form-control">
+        </div>
+        <div class="col-12">
+            <label class="mono-label" style="font-size: 10px; color: var(--color-ash);">DETAILED ADDRESS</label>
+            <input type="text" name="address" id="id_address" placeholder="Room number, floor, or landmarks" class="form-control">
+        </div>
+    </div>
+
+    <!-- Hidden fields for the form -->
+    <input type="hidden" name="latitude" id="id_latitude">
+    <input type="hidden" name="longitude" id="id_longitude">
+    <input type="hidden" name="delivery_fee" id="id_delivery_fee" value="0.00">
+
+    <div id="location-status" class="mono-label mt-3" style="font-size: 10px; display: none;"></div>
+</div>
+
+<style>
+    #location-picker input.form-control {
+        border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(15,13,10,.1);
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    #location-picker input.form-control:focus {
+        border-color: var(--color-ink);
+        box-shadow: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('use-current-location');
+        const status = document.getElementById('location-status');
+        const buildingInput = document.getElementById('id_building_name');
+        const streetInput = document.getElementById('id_street');
+        const addressInput = document.getElementById('id_address');
+        const latInput = document.getElementById('id_latitude');
+        const lngInput = document.getElementById('id_longitude');
+        const feeInput = document.getElementById('id_delivery_fee');
+
+        const updateTotals = (fee) => {
+            const subtotal = parseFloat("{{ cart_total|default:0 }}");
+            const deliveryFeeElem = document.getElementById('summary-delivery-fee');
+            const grandTotalElem = document.getElementById('summary-grand-total');
+            
+            if (deliveryFeeElem) deliveryFeeElem.textContent = `KES ${fee.toFixed(2)}`;
+            if (grandTotalElem) grandTotalElem.textContent = `KES ${(subtotal + fee).toFixed(2)}`;
+            
+            feeInput.value = fee.toFixed(2);
+        };
+
+        btn.addEventListener('click', () => {
+            status.style.display = 'block';
+            status.style.color = 'var(--color-ash)';
+            status.textContent = 'Fetching your location...';
+
+            if (!navigator.geolocation) {
+                status.textContent = 'Geolocation is not supported by your browser.';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    latInput.value = lat;
+                    lngInput.value = lng;
+
+                    status.textContent = '📍 Location detected. Getting address details...';
+
+                    try {
+                        // Reverse Geocoding using Nominatim (OpenStreetMap)
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+                        const data = await response.json();
+                        
+                        if (data.address) {
+                            const addr = data.address;
+                            streetInput.value = addr.road || addr.suburb || addr.neighbourhood || '';
+                            addressInput.value = data.display_name;
+                            if (addr.building || addr.house_name) {
+                                buildingInput.value = addr.building || addr.house_name;
+                            }
+                        }
+                        
+                        // Set mock delivery fee
+                        updateTotals(50.00);
+                        status.style.color = 'var(--color-primary)';
+                        status.textContent = '✅ Location details updated!';
+                    } catch (error) {
+                        console.error('Reverse geocoding error:', error);
+                        updateTotals(50.00); // Still set fee even if geocoding fails
+                        status.textContent = '📍 Location set (Manual address entry may be needed).';
+                    }
+                },
+                (error) => {
+                    status.style.color = 'red';
+                    status.textContent = '❌ Error: ' + error.message;
+                }
+            );
+        });
+
+        // If user types manually, we still want to charge delivery fee
+        const manualInputs = [buildingInput, streetInput, addressInput];
+        manualInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                if (parseFloat(feeInput.value) === 0) {
+                    updateTotals(50.00);
+                }
+            });
+        });
+    });
+</script>
