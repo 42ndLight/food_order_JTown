@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card p-4 p-md-5 text-center" style="background: #fff; border-radius: var(--radius-md); border: 1.5px solid rgba(15,13,10,.08); box-shadow: 0 10px 30px rgba(0,0,0,0.04);">
+                
+                <div class="mb-4">
+                    <div class="spinner-grow text-warning mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
+                        <span class="visually-hidden">Waiting for payment...</span>
+                    </div>
+                    <div class="mono-label text-primary mb-1">STK Push Sent</div>
+                    <h1 class="display-title" style="font-size: 2rem;">CHECK YOUR PHONE</h1>
+                </div>
+
+                <div class="alert alert-light border text-start mb-4" style="border-radius: var(--radius-sm); background: var(--color-paper);">
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="mono-label text-ash">ORDER</span>
+                        <span class="fw-bold">#{{ order.id }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="mono-label text-ash">PHONE</span>
+                        <span class="fw-bold">{{ phone_number }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="mono-label text-ash">AMOUNT</span>
+                        <span class="fw-bold text-success" style="font-size: 1.2rem;">KES {{ amount }}</span>
+                    </div>
+                </div>
+
+                <p class="text-ash mb-4" id="status-instructions">
+                    An M-Pesa prompt has been sent to <strong>{{ phone_number }}</strong>.<br>
+                    Please enter your M-Pesa PIN to complete the payment.
+                </p>
+
+                <div id="payment-status-box" class="p-3 mb-4 mono-label" style="background: rgba(242,168,50,0.1); border-radius: var(--radius-sm); font-size: 11px; color: var(--color-ink);">
+                    <span id="status-icon">⏳</span> <span id="status-text">Awaiting PIN confirmation...</span>
+                </div>
+
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'orders:order_create' %}" class="btn-jtown-outline text-decoration-none">Back to Checkout</a>
+                    <a href="{% url 'orders:cart_detail' %}" class="btn-jtown-outline text-decoration-none">View Cart</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const checkoutRequestId = "{{ checkout_request_id }}";
+        const statusBox = document.getElementById('payment-status-box');
+        const statusText = document.getElementById('status-text');
+        const statusIcon = document.getElementById('status-icon');
+        const instructions = document.getElementById('status-instructions');
+        
+        let attempts = 0;
+        const maxAttempts = 40; // ~2 minutes of polling
+
+        const checkStatus = async () => {
+            attempts++;
+            try {
+                const response = await fetch(`{% url 'payments:check-payment-status' %}?checkout_request_id=${encodeURIComponent(checkoutRequestId)}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    if (data.transaction_status === 'SUCCESS' || data.order_status === 'paid') {
+                        statusIcon.textContent = '✅';
+                        statusText.textContent = 'Payment successful! Redirecting to confirmation...';
+                        statusBox.style.background = 'rgba(25, 135, 84, 0.15)';
+                        statusBox.style.color = '#0f5132';
+                        setTimeout(() => {
+                            window.location.href = "{% url 'orders:order_success' %}";
+                        }, 1200);
+                        return;
+                    } else if (data.transaction_status === 'FAILED' || data.order_status === 'failed') {
+                        statusIcon.textContent = '❌';
+                        statusText.textContent = 'Payment cancelled or failed.';
+                        statusBox.style.background = 'rgba(220, 53, 69, 0.15)';
+                        statusBox.style.color = '#842029';
+                        instructions.innerHTML = 'The transaction was cancelled or declined. You can try again from checkout.';
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error("Status check failed:", err);
+            }
+
+            if (attempts < maxAttempts) {
+                setTimeout(checkStatus, 3000);
+            } else {
+                statusText.textContent = 'Timed out waiting for response. Check your M-Pesa SMS or refreshed order status.';
+            }
+        };
+
+        if (checkoutRequestId) {
+            setTimeout(checkStatus, 3000);
+        }
+    });
+</script>
+{% endblock %}

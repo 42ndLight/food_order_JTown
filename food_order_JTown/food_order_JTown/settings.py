@@ -11,10 +11,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
-import os
-from decouple import config
 
+import os
+
+from dotenv import load_dotenv
+# Load environment variables from .env file
+load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,26 +27,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('KEY_SEC')
+SECRET_KEY = os.environ.get('KEY_SEC')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG')
+DEBUG = os.environ.get('DEBUG')
 
 ALLOWED_HOSTS =['.ngrok-free.app', '127.0.0.1',]
-#CSRF_TRUSTED_ORIGINS = ['https://bd3d733a4bd1.ngrok-free.app']
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ["https://bd3d733a4bd1.ngrok-free.app", "http://127.0.0.1:8000", "http://localhost:8000"]
 
 
 
 
-MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY')
-MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET')
-MPESA_SHORTCODE = config('MPESA_SHORTCODE')  # PayBill/Till
-MPESA_PASSKEY = config('MPESA_PASSKEY')  # For STK Push
-MPESA_EXPRESS_SHORTCODE = config('MPESA_EXPRESS_SHORTCODE')
-MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL')  # e.g., https://yourdomain.com/mpesa/callback/
-MPESA_INITIATOR_USERNAME = config('INITIATOR_USERNAME')
-MPESA_INITIATOR_SECURITY_CREDENTIAL = config('INITIATOR_SECURITY_CREDENTIAL')
-MPESA_PASSKEY = config('MPESA_PASSKEY')
+MPESA_CONSUMER_KEY = os.environ.get('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = os.environ.get('MPESA_CONSUMER_SECRET')
+MPESA_SHORTCODE = os.environ.get('MPESA_SHORTCODE')  # PayBill/Till
+MPESA_PASSKEY = os.environ.get('MPESA_PASSKEY')  # For STK Push
+MPESA_EXPRESS_SHORTCODE = os.environ.get('MPESA_EXPRESS_SHORTCODE')
+MPESA_CALLBACK_URL = os.environ.get('MPESA_CALLBACK_URL')  # e.g., https://yourdomain.com/mpesa/callback/
+MPESA_INITIATOR_USERNAME = os.environ.get('INITIATOR_USERNAME')
+MPESA_INITIATOR_SECURITY_CREDENTIAL = os.environ.get('INITIATOR_SECURITY_CREDENTIAL')
+MPESA_PASSKEY = os.environ.get('MPESA_PASSKEY')
 MPESA_ENVIRONMENT = 'sandbox'  # Switch to 'production' later
 
 
@@ -88,6 +91,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'orders.context_processors.cart_count',
             ],
         },
     },
@@ -101,12 +105,14 @@ WSGI_APPLICATION = 'food_order_JTown.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': config('ENGINE'),
-        'NAME': config('NAME'),
+        'ENGINE':'django.db.backends.{}'.format(
+             os.getenv('DB_ENGINE', 'sqlite3')
+         ),
+        'NAME': os.environ.get('NAME'),
         'USER': 'food_app',
-        'PASSWORD': config('PASSWORD'), 
-        'HOST': config('HOST'),
-        'PORT': config('PORT'),
+        'PASSWORD': os.environ.get('PASSWORD'), 
+        'HOST': os.environ.get('HOST'),
+        'PORT': os.environ.get('PORT'),
     
     }
 }

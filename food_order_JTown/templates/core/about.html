@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-4 my-md-5">
+    <!-- Hero / Eyebrow Header -->
+    <div class="text-center mb-5">
+        <div class="mono-label text-primary mb-2">Since 2024 · Handcrafted With Fire</div>
+        <h1 class="display-title" style="font-size: clamp(2.4rem, 6.5vw, 4.2rem);">THE JTOWN STORY</h1>
+        <p class="text-ash mx-auto" style="max-width: 620px; font-size: 15px;">
+            Born from a passion for authentic smash burgers, crispy edges, and honest street food. Here is how Jersey Town Burgers came to life.
+        </p>
+    </div>
+
+    <!-- Story Hero Card -->
+    <div class="hero-section mb-5 p-4 p-md-5 position-relative overflow-hidden rounded-4">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="hero-eyebrow">OUR PHILOSOPHY</span>
+                <h2 class="hero-title text-white mb-3" style="font-size: clamp(2rem, 5vw, 3.5rem);">
+                    HARD SMASH.<br><span>NO GIMMICKS.</span>
+                </h2>
+                <p class="hero-sub text-paper opacity-85 mb-4" style="max-width: 520px; font-size: 13px; line-height: 1.7;">
+                    We believe the best burger isn’t stacked with tall, inedible gimmicks. It’s built on a scorching-hot chrome flat-top grill, where freshly ground beef meets heavy cast iron to produce an unbeatable caramelized crust and maximum flavor.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{% url 'core:menu' %}" class="btn-jtown-primary text-decoration-none">Explore Menu →</a>
+                    <a href="{% url 'core:contact' %}" class="btn-jtown-outline text-paper text-decoration-none" style="border-color: rgba(245,240,232,0.3);">Get in Touch</a>
+                </div>
+            </div>
+            <div class="col-lg-5 text-center">
+                <div class="about-hero-stat-box p-4 rounded-4" style="background: rgba(245,240,232,0.06); border: 1px solid rgba(245,240,232,0.15); backdrop-filter: blur(6px);">
+                    <div class="display-title text-gold mb-1" style="font-size: 3rem;">100%</div>
+                    <div class="mono-label text-paper mb-3" style="font-size: 12px;">FRESH BEEF DAILY</div>
+                    <hr style="border-color: rgba(245,240,232,0.15);">
+                    <div class="display-title text-primary mb-1" style="font-size: 3rem;">450°F</div>
+                    <div class="mono-label text-paper" style="font-size: 12px;">SCORCHING FLAT-TOP HEAT</div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-bg-glyph" aria-hidden="true">J</div>
+    </div>
+
+    <!-- Core Pillars / Vision Grid -->
+    <div class="mb-5">
+        <div class="text-center mb-4">
+            <div class="mono-label text-primary mb-1">Our Pillars</div>
+            <h3 class="mb-2" style="font-size: 2rem;">HOW WE CRAFT PERFECTION</h3>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="p-4 h-100 rounded-4 about-value-card" style="background: #fff; border: 1.5px solid rgba(15,13,10,.08);">
+                    <div class="contact-icon-bubble mb-3">🥩</div>
+                    <h4 class="mb-2" style="font-size: 1.3rem;">Prime Cuts Only</h4>
+                    <p class="text-ash mb-0" style="font-size: 13px; line-height: 1.6;">
+                        Never frozen patties. We source prime chuck and brisket from trusted local butchers, grinding our beef blend daily for rich flavor and natural juiciness.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-4 h-100 rounded-4 about-value-card" style="background: #fff; border: 1.5px solid rgba(15,13,10,.08);">
+                    <div class="contact-icon-bubble mb-3">🍞</div>
+                    <h4 class="mb-2" style="font-size: 1.3rem;">Buttery Brioche</h4>
+                    <p class="text-ash mb-0" style="font-size: 13px; line-height: 1.6;">
+                        Our pillowy brioche buns are delivered fresh every morning, lightly brushed with clarified butter and toasted on the grill until golden brown.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-4 h-100 rounded-4 about-value-card" style="background: #fff; border: 1.5px solid rgba(15,13,10,.08);">
+                    <div class="contact-icon-bubble mb-3">🥒</div>
+                    <h4 class="mb-2" style="font-size: 1.3rem;">House Crafted Sauces</h4>
+                    <p class="text-ash mb-0" style="font-size: 13px; line-height: 1.6;">
+                        From our signature smoky JTown secret sauce to house-brined crunchy pickles, every single condiment is made by hand in our kitchen.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Photo Gallery Carousel Section -->
+    <div class="gallery-section my-5 pt-3">
+        <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+            <div>
+                <div class="mono-label text-primary mb-1">Kitchen & Atmosphere</div>
+                <h3 class="mb-0" style="font-size: 2rem;">GALLERY & BEHIND THE SCENES</h3>
+            </div>
+            <div class="carousel-nav-buttons d-flex gap-2">
+                <button type="button" class="carousel-control-btn" id="gallery-prev" aria-label="Previous Slide">
+                    ←
+                </button>
+                <button type="button" class="carousel-control-btn" id="gallery-next" aria-label="Next Slide">
+                    →
+                </button>
+            </div>
+        </div>
+
+        <!-- Carousel Viewport -->
+        <div class="carousel-container position-relative overflow-hidden rounded-4" id="gallery-carousel" tabindex="0" aria-roledescription="carousel" aria-label="JTown Gallery Carousel">
+            <div class="carousel-track" id="carousel-track">
+                {% if gallery_images %}
+                    {% for img in gallery_images %}
+                        <div class="carousel-slide" role="group" aria-roledescription="slide" aria-label="{{ forloop.counter }} of {{ gallery_images|length }}">
+                            <div class="gallery-card rounded-4 overflow-hidden position-relative">
+                                {% if img.image %}
+                                    <img src="{{ img.image.url }}" alt="{{ img.title }}" class="gallery-img" loading="lazy">
+                                {% else %}
+                                    <div class="d-flex flex-column align-items-center justify-content-center h-100 p-4 text-center" style="background: linear-gradient(135deg, #1f1b16, #0f0d0a);">
+                                        <span style="font-size: 3.5rem; margin-bottom: 8px;">🍔</span>
+                                        <div class="mono-label text-gold" style="font-size: 11px;">JERSEY TOWN KITCHEN</div>
+                                    </div>
+                                {% endif %}
+                                <div class="gallery-caption p-3 p-md-4">
+                                    <span class="mono-label text-gold" style="font-size: 10px;">JERSEY TOWN MOMENTS</span>
+                                    <h4 class="text-paper mb-0 mt-1" style="font-size: 1.25rem;">{{ img.title }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Curated Fallback Gallery Slides -->
+                    <div class="carousel-slide" role="group" aria-roledescription="slide" aria-label="1 of 3">
+                        <div class="gallery-card rounded-4 overflow-hidden position-relative">
+                            <img src="{% static 'core/images/hero-burger.jpg' %}" onerror="this.onerror=null; this.src='/media/menu/burger.jpeg';" alt="The Signature Smash Burger" class="gallery-img">
+                            <div class="gallery-caption p-3 p-md-4">
+                                <span class="mono-label text-gold" style="font-size: 10px;">SIGNATURE SMASH</span>
+                                <h4 class="text-paper mb-0 mt-1" style="font-size: 1.25rem;">Double Patty With Melted Cheddar</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-slide" role="group" aria-roledescription="slide" aria-label="2 of 3">
+                        <div class="gallery-card rounded-4 overflow-hidden position-relative">
+                            <img src="{% static 'core/images/hotdog.jpg' %}" onerror="this.onerror=null; this.src='/media/menu/hotdog.jpeg';" alt="Loaded Artisan Hot Dog" class="gallery-img">
+                            <div class="gallery-caption p-3 p-md-4">
+                                <span class="mono-label text-gold" style="font-size: 10px;">LOADED CREATIONS</span>
+                                <h4 class="text-paper mb-0 mt-1" style="font-size: 1.25rem;">Handcrafted Loaded Dogs & Fries</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-slide" role="group" aria-roledescription="slide" aria-label="3 of 3">
+                        <div class="gallery-card rounded-4 overflow-hidden position-relative">
+                            <img src="{% static 'core/images/pasta.jpg' %}" onerror="this.onerror=null; this.src='/media/menu/pasta.jpeg';" alt="Savory Sides and Meals" class="gallery-img">
+                            <div class="gallery-caption p-3 p-md-4">
+                                <span class="mono-label text-gold" style="font-size: 10px;">KITCHEN CRAFT</span>
+                                <h4 class="text-paper mb-0 mt-1" style="font-size: 1.25rem;">Made Fresh In Jersey Town Every Day</h4>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Slide Indicators -->
+            <div class="carousel-indicators-bar d-flex justify-content-center gap-2 mt-3" id="carousel-indicators"></div>
+        </div>
+    </div>
+
+    <!-- Final Call to Action -->
+    <div class="text-center my-5 py-4 p-4 rounded-4" style="background: #fff; border: 1.5px solid rgba(15,13,10,.08);">
+        <div class="mono-label text-primary mb-2">Taste The Difference</div>
+        <h2 class="display-title mb-3" style="font-size: clamp(1.8rem, 4vw, 2.8rem);">READY FOR YOUR JTOWN FIX?</h2>
+        <p class="text-ash mx-auto mb-4" style="max-width: 500px; font-size: 13px;">
+            Order online in minutes, track your delivery, or swing by our stand for hot and fresh smash burgers.
+        </p>
+        <a href="{% url 'core:menu' %}" class="btn-jtown-primary text-decoration-none px-4 py-3" style="font-size: 13px;">
+            View Full Menu & Order →
+        </a>
+    </div>
+</div>
+
+<style>
+    /* Carousel Styles */
+    .carousel-container {
+        width: 100%;
+        background-color: var(--color-ink);
+        border: 1.5px solid rgba(15, 13, 10, 0.1);
+        touch-action: pan-y;
+        user-select: none;
+    }
+
+    .carousel-track {
+        display: flex;
+        transition: transform 400ms cubic-bezier(.4, 0, .2, 1);
+        will-change: transform;
+    }
+
+    .carousel-slide {
+        min-width: 100%;
+        flex-shrink: 0;
+        box-sizing: border-box;
+    }
+
+    .gallery-card {
+        height: 380px;
+        position: relative;
+        background-color: var(--color-ink);
+    }
+
+    @media (max-width: 576px) {
+        .gallery-card {
+            height: 260px;
+        }
+    }
+
+    .gallery-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.85);
+        transition: transform 600ms cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .gallery-card:hover .gallery-img {
+        transform: scale(1.03);
+    }
+
+    .gallery-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(15, 13, 10, 0.95), rgba(15, 13, 10, 0.5) 60%, transparent);
+        color: var(--color-paper);
+    }
+
+    .carousel-control-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-pill);
+        border: 1.5px solid rgba(15, 13, 10, 0.15);
+        background: #fff;
+        color: var(--color-ink);
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition-fast);
+        touch-action: manipulation;
+    }
+
+    .carousel-control-btn:hover {
+        background: var(--color-ink);
+        color: #fff;
+        border-color: var(--color-ink);
+    }
+
+    .carousel-control-btn:active {
+        transform: scale(0.92);
+    }
+
+    .carousel-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: rgba(15, 13, 10, 0.2);
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+
+    .carousel-dot.active {
+        background-color: var(--color-primary);
+        width: 26px;
+        border-radius: var(--radius-pill);
+    }
+
+    .about-value-card {
+        transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .about-value-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(15, 13, 10, 0.18) !important;
+        box-shadow: 0 10px 24px rgba(15, 13, 10, 0.08);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('carousel-track');
+    const container = document.getElementById('gallery-carousel');
+    const prevBtn = document.getElementById('gallery-prev');
+    const nextBtn = document.getElementById('gallery-next');
+    const indicatorsBar = document.getElementById('carousel-indicators');
+
+    if (!track || !container) return;
+
+    const slides = Array.from(track.children);
+    const totalSlides = slides.length;
+    if (totalSlides === 0) return;
+
+    let currentIndex = 0;
+    let autoPlayTimer = null;
+    let isSwiping = false;
+    let startX = 0;
+    let currentX = 0;
+
+    // Create Indicator Dots
+    indicatorsBar.innerHTML = '';
+    slides.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = `carousel-dot ${idx === 0 ? 'active' : ''}`;
+        dot.setAttribute('aria-label', `Go to slide ${idx + 1}`);
+        dot.addEventListener('click', () => {
+            goToSlide(idx);
+            resetAutoPlay();
+        });
+        indicatorsBar.appendChild(dot);
+    });
+
+    const updateIndicators = () => {
+        const dots = indicatorsBar.querySelectorAll('.carousel-dot');
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('active', idx === currentIndex);
+            dot.setAttribute('aria-current', idx === currentIndex ? 'true' : 'false');
+        });
+    };
+
+    const goToSlide = (index) => {
+        if (index < 0) {
+            currentIndex = totalSlides - 1;
+        } else if (index >= totalSlides) {
+            currentIndex = 0;
+        } else {
+            currentIndex = index;
+        }
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+        updateIndicators();
+    };
+
+    const nextSlide = () => {
+        goToSlide(currentIndex + 1);
+    };
+
+    const prevSlide = () => {
+        goToSlide(currentIndex - 1);
+    };
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            nextSlide();
+            resetAutoPlay();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            prevSlide();
+            resetAutoPlay();
+        });
+    }
+
+    // Auto Play with Pause on Hover / Touch
+    const startAutoPlay = () => {
+        if (totalSlides <= 1) return;
+        autoPlayTimer = setInterval(nextSlide, 4500);
+    };
+
+    const stopAutoPlay = () => {
+        if (autoPlayTimer) clearInterval(autoPlayTimer);
+    };
+
+    const resetAutoPlay = () => {
+        stopAutoPlay();
+        startAutoPlay();
+    };
+
+    container.addEventListener('mouseenter', stopAutoPlay);
+    container.addEventListener('mouseleave', startAutoPlay);
+    container.addEventListener('focusin', stopAutoPlay);
+    container.addEventListener('focusout', startAutoPlay);
+
+    // Keyboard Arrow Navigation
+    container.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            prevSlide();
+            resetAutoPlay();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextSlide();
+            resetAutoPlay();
+        }
+    });
+
+    // Touch Swipe Gestures (Mobile/Tablet)
+    container.addEventListener('touchstart', (e) => {
+        stopAutoPlay();
+        isSwiping = true;
+        startX = e.touches[0].clientX;
+        currentX = startX;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!isSwiping) return;
+        currentX = e.touches[0].clientX;
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        const diffX = startX - currentX;
+        const threshold = 40; // minimum drag distance in pixels
+        if (diffX > threshold) {
+            nextSlide();
+        } else if (diffX < -threshold) {
+            prevSlide();
+        }
+        startAutoPlay();
+    });
+
+    startAutoPlay();
+});
+</script>
+{% endblock %}

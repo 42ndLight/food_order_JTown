@@ -153,7 +153,7 @@ def logout_view(request):
     logout(request)
     return redirect(url_home)
 
-@require_http_methods(["POST"])
+
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)

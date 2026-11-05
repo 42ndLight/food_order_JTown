@@ -1,0 +1,133 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-jtown">
+    <div class="container-fluid">
+        <a class="navbar-brand-jtown" href="{% url 'core:home' %}">
+            <div class="live-dot"></div>
+            JTown
+        </a>
+        
+        <button class="navbar-toggler navbar-toggler-jtown" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto py-2 py-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link nav-link-jtown mono-label" href="{% url 'core:menu' %}">Menu</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-jtown mono-label" href="{% url 'core:about' %}">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-jtown mono-label" href="{% url 'core:contact' %}">Contact</a>
+                </li>
+            </ul>
+
+            <div class="navbar-nav-actions d-flex align-items-center gap-3">
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <a class="mono-label text-paper text-decoration-none dropdown-toggle user-menu-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            👤 {{ user.phone_no|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-jtown dropdown-menu-dark">
+                            {% if user.role == 'customer' %}
+                                <li><a class="dropdown-item" href="{% url 'core:customer_dashboard' %}">My Orders</a></li>
+                            {% elif user.role in 'admin,staff,owner' %}
+                                <li><a class="dropdown-item" href="{% url 'core:staff_dashboard' %}">Dashboard</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'users:logout' %}">Logout</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'users:customer_send_otp' %}" class="mono-label nav-login-btn text-decoration-none">Login</a>
+                {% endif %}
+
+                <a href="{% url 'orders:cart_detail' %}" class="cart-badge-jtown" id="cart-badge">
+                    <span>🛒 Cart</span>
+                    <div class="cart-num-jtown" id="cart-count">{{ cart_count|default:0 }}</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    /* Strictly opaque navbar & dropdown styles */
+    .navbar-jtown {
+        background-color: #0f0d0a !important;
+        position: relative;
+        z-index: 1030;
+    }
+
+    /* Mobile drawer dropdown when toggled */
+    @media (max-width: 991.98px) {
+        .navbar-jtown .navbar-collapse,
+        #navbarNav.navbar-collapse,
+        #navbarNav.collapsing,
+        #navbarNav.collapse.show {
+            background-color: #0f0d0a !important;
+            margin-top: 10px !important;
+            padding: 18px 20px 24px !important;
+            border-top: 1px solid rgba(245, 240, 232, 0.15) !important;
+            border-bottom: 2px solid var(--color-primary) !important;
+            border-radius: 0 0 14px 14px !important;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85) !important;
+        }
+
+        .navbar-jtown .nav-link-jtown {
+            color: #f5f0e8 !important;
+            font-size: 13px !important;
+            padding: 10px 14px !important;
+            display: block !important;
+            border-radius: 6px;
+        }
+
+        .navbar-jtown .nav-link-jtown:hover,
+        .navbar-jtown .nav-link-jtown:focus {
+            color: #f2a832 !important;
+            background-color: rgba(245, 240, 232, 0.08) !important;
+        }
+
+        .navbar-nav-actions {
+            margin-top: 14px !important;
+            padding-top: 14px !important;
+            border-top: 1px solid rgba(245, 240, 232, 0.12) !important;
+        }
+    }
+
+    /* User Profile Dropdown Menu & standard dark dropdowns */
+    .navbar-jtown .dropdown-menu,
+    .dropdown-menu-dark,
+    .dropdown-menu-jtown {
+        background-color: #1c1814 !important;
+        border: 1.5px solid rgba(245, 240, 232, 0.2) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8) !important;
+        padding: 8px 0 !important;
+    }
+
+    .navbar-jtown .dropdown-item,
+    .dropdown-menu-jtown .dropdown-item,
+    .dropdown-menu-dark .dropdown-item {
+        color: #f5f0e8 !important;
+        font-family: var(--font-mono);
+        font-size: 12px !important;
+        padding: 9px 18px !important;
+        background-color: transparent;
+    }
+
+    .navbar-jtown .dropdown-item:hover,
+    .navbar-jtown .dropdown-item:focus,
+    .dropdown-menu-jtown .dropdown-item:hover,
+    .dropdown-menu-dark .dropdown-item:hover {
+        background-color: #0f0d0a !important;
+        color: #f2a832 !important;
+    }
+
+    .navbar-jtown .dropdown-divider,
+    .dropdown-menu-dark .dropdown-divider {
+        border-color: rgba(245, 240, 232, 0.12) !important;
+    }
+</style>

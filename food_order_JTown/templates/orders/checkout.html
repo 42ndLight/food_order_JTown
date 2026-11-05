@@ -1,18 +1,222 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
 <div class="container my-5">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h2>Checkout</h2>
-                <p>Cart Total: KSh {{ cart_total }}</p>
-                <p>Phone Number: {{ phone_number }}</p>
-                <form method="POST">
+    <div class="text-center mb-5">
+        <div class="mono-label text-primary mb-2">Final Step</div>
+        <h1 class="display-title">CHECKOUT</h1>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card p-4 h-100" style="background: #fff; border-radius: var(--radius-md); border: 1.5px solid rgba(15,13,10,.08);">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h3 class="mb-1">Delivery Location</h3>
+                        <p class="text-ash mb-0" style="font-size: 12px;">Enter your delivery location or auto-detect with your device</p>
+                    </div>
+                    <button id="use-current-location" type="button" class="btn-jtown-primary" style="font-size: 11px; padding: 7px 15px;">
+                        📍 Use My Location
+                    </button>
+                </div>
+
+                <div id="location-status" class="mono-label mb-3 p-2 rounded" style="font-size: 11px; display: none; background: rgba(15,13,10,0.04);"></div>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger mono-label py-2 mb-4" style="font-size: 11px; border-radius: var(--radius-sm);">
+                        <strong>Please correct the following:</strong>
+                        <ul class="mb-0 mt-1 ps-3">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <form method="POST" id="checkout-form">
                     {% csrf_token %}
-                    {{ order_form.as_p }}
-                    <button type="submit" class="btn btn-primary bottom-right float-end">Proceed to Payment</button>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">BUILDING NAME / APARTMENT</label>
+                            {{ form.building_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">STREET</label>
+                            {{ form.street }}
+                        </div>
+                        <div class="col-12">
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">DETAILED ADDRESS / ROOM / LANDMARK</label>
+                            {{ form.address }}
+                        </div>
+                        
+                        <!-- Hidden fields -->
+                        {{ form.user }}
+                        {{ form.latitude }}
+                        {{ form.longitude }}
+                        {{ form.delivery_fee }}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-5">
+                        <a href="{% url 'orders:cart_detail' %}" class="btn-jtown-outline text-decoration-none">Back to Cart</a>
+                        <button type="submit" class="btn-jtown-secondary border-0">Confirm & Pay →</button>
+                    </div>
                 </form>
             </div>
         </div>
-        <a href="{% url 'orders:cart_detail' %}" class="btn btn-secondary">Back to Cart</a>
+        
+        <div class="col-md-4">
+            <div class="card p-4" style="background: var(--color-ink); color: var(--color-paper); border-radius: var(--radius-md); border: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0" style="color: var(--color-paper);">Summary</h3>
+                    {% if phone_number %}
+                        <div class="mono-label text-gold" style="font-size: 11px;">
+                            📞 {{ phone_number }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="mono-label text-ash">Items Total</span>
+                    <span class="mono-label" id="summary-items-total">KES {{ cart_subtotal|floatformat:2 }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-3 pb-3 border-bottom" style="border-color: rgba(245,240,232,0.1) !important;">
+                    <span class="mono-label text-ash">Delivery Fee</span>
+                    <span class="mono-label" id="summary-delivery-fee">KES {{ delivery_fee|floatformat:2 }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="mono-label" style="color: var(--color-gold);">Grand Total</span>
+                    <span class="display-title" id="summary-grand-total" style="font-size: 1.5rem; color: var(--color-gold);">KES {{ grand_total|floatformat:2 }}</span>
+                </div>
+
+                <div class="p-3" style="background: rgba(245,240,232,0.05); border-radius: var(--radius-sm);">
+                    <div class="mono-label mb-1" style="font-size: 10px; color: var(--color-ash);">PAYMENT METHOD</div>
+                    <div class="mono-label" style="font-size: 12px;">M-PESA (STK Push)</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    input[type="text"], input[type="tel"], textarea, select {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid rgba(15,13,10,.1);
+        font-family: var(--font-body);
+        font-size: 13px;
+        transition: var(--transition-fast);
+    }
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: var(--color-ink);
+        background-color: #fff;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('use-current-location');
+    const status = document.getElementById('location-status');
+    const buildingInput = document.getElementById('id_building_name');
+    const streetInput = document.getElementById('id_street');
+    const addressInput = document.getElementById('id_address');
+    const latInput = document.getElementById('id_latitude');
+    const lngInput = document.getElementById('id_longitude');
+    const feeInput = document.getElementById('id_delivery_fee');
+
+    const subtotal = parseFloat("{{ cart_subtotal|default:0 }}");
+    const STANDARD_DELIVERY_FEE = 50.00;
+
+    const updateTotals = (fee) => {
+        const deliveryFeeElem = document.getElementById('summary-delivery-fee');
+        const grandTotalElem = document.getElementById('summary-grand-total');
+        
+        if (deliveryFeeElem) deliveryFeeElem.textContent = `KES ${fee.toFixed(2)}`;
+        if (grandTotalElem) grandTotalElem.textContent = `KES ${(subtotal + fee).toFixed(2)}`;
+        
+        if (feeInput) feeInput.value = fee.toFixed(2);
+    };
+
+    // If initial delivery fee is > 0 or address already filled, reflect it
+    if (parseFloat(feeInput.value || 0) > 0) {
+        updateTotals(parseFloat(feeInput.value));
+    } else if (buildingInput.value || streetInput.value || addressInput.value) {
+        updateTotals(STANDARD_DELIVERY_FEE);
+    }
+
+    if (btn) {
+        btn.addEventListener('click', () => {
+            status.style.display = 'block';
+            status.style.color = 'var(--color-ash)';
+            status.textContent = '📍 Detecting your location...';
+
+            if (!navigator.geolocation) {
+                status.style.color = '#c0392b';
+                status.textContent = '❌ Geolocation is not supported by your browser.';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    if (latInput) latInput.value = lat;
+                    if (lngInput) lngInput.value = lng;
+
+                    status.textContent = '📍 Location detected. Getting address details...';
+
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+                        const data = await response.json();
+                        
+                        if (data && data.address) {
+                            const addr = data.address;
+                            if (streetInput) streetInput.value = addr.road || addr.suburb || addr.neighbourhood || '';
+                            if (addressInput) addressInput.value = data.display_name || '';
+                            if (buildingInput && (addr.building || addr.house_name)) {
+                                buildingInput.value = addr.building || addr.house_name;
+                            }
+                        }
+                        
+                        updateTotals(STANDARD_DELIVERY_FEE);
+                        status.style.color = '#27ae60';
+                        status.textContent = '✅ Location details updated! Standard delivery fee applied.';
+                    } catch (error) {
+                        console.error('Reverse geocoding error:', error);
+                        updateTotals(STANDARD_DELIVERY_FEE);
+                        status.style.color = 'var(--color-ink)';
+                        status.textContent = '📍 GPS coordinates captured. Please fill in street/building manually.';
+                    }
+                },
+                (error) => {
+                    status.style.color = '#c0392b';
+                    status.textContent = '❌ Geolocation error: ' + error.message + '. Please enter address manually.';
+                },
+                { timeout: 10000, enableHighAccuracy: true }
+            );
+        });
+    }
+
+    // When typing address manually, ensure delivery fee is set
+    const manualInputs = [buildingInput, streetInput, addressInput];
+    manualInputs.forEach(input => {
+        if (input) {
+            input.addEventListener('input', () => {
+                if (parseFloat(feeInput.value || 0) === 0 && (buildingInput.value || streetInput.value || addressInput.value)) {
+                    updateTotals(STANDARD_DELIVERY_FEE);
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

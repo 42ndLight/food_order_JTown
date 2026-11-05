@@ -1,95 +1,574 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
-<link rel="stylesheet" type="text/css" href="{% static 'core/css/style.css' %}">
 
-    <div class="container my-5 ">
-        <h1 class="text-center mb-4">Our Menu</h1>
-        <a href="{% url 'orders:cart_detail'%}" class="btn btn-primary float-end">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
-            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
-          </svg>
-          View Cart
-          </a>        
-        <!-- Category Filters -->
-        <div class="d-flex justify-content-center flex-wrap mb-4">
-            <span class="category-filter active " data-category="all">All</span>
-            {% for category in categories %}
-                <span class="category-filter" data-category="{{ category }}">{{ category }}</span>
-            {% endfor %}
-        </div>
-        <!-- Menu Items Grouped by Category -->
-            <div id="menu-items">
-                {% for category, items in items_by_category %}
-                  <div class="category-section category-filter" data-category="{{ category }}">
-                    <h3 class="mb-3">{{ category }}</h3>
-                    <div class="row">
-                      {% for item in items %}
-                        <div class="col-md-4 col-sm-6 mb-4 " data-category="{{ item.category_id.name }}">
-                          <div class="card menu-item-card ">
-                            {% if item.image %}
-                              <img src="{{ item.image.url }}" class="card-img-top menu-item-img" alt="{{ item.name }}">
-                            {% else %}
-                              <img src="{% static 'core/images/burger.jpg' %}" class="card-img-top menu-item-img" alt=" Placeholder">
-                            {% endif %}
-                            <div class="card-body">
-                              <h5 class="card-title">{{ item.name }}</h5>
-                              <p class="card-text">{{ item.description|truncatewords:20 }}</p>
-                              <p class="card-text"><strong>Price:</strong> ${{ item.price }}</p>
-                              <p class="card-text"><small class="text-muted">Category: {{ item.category_id.name }}</small></p>
-                              {% if user.is_authenticated %}
-                                        <form method="POST" action="{% url 'orders:cart_add' %}">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="menu_item" value="{{ item.id }}">
-                                            <div class="input-group mb-2">
-                                                <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 80px;">
-                                                <button type="submit" class="btn btn-primary">Add to Cart</button>
-                                            </div>
-                                        </form>
-                              {% else %}
-                                        <button 
-                                        type="button" 
-                                        class="btn btn-primary login-prompt" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#loginModal" data-item-id="{{ item.id }}">
-                                      Add to Cart
-                                    </button>
-                              {% endif %}
-                              </div>
-                          </div>
-                        </div>
-                      {% empty %}
-                        <p class="text-center">No items found for {{ category }}.</p>
-                      {% endfor %}
-                    </div>
-                  </div>
-            {% endfor %}
+{% block content %}
+<div class="container my-4 my-md-5">
+    <div class="text-center mb-4 mb-md-5">
+        <div class="mono-label text-primary mb-2">Jersey Town Favorite</div>
+        <h1 class="display-title" style="font-size: clamp(2.2rem, 6vw, 3.8rem);">FULL MENU</h1>
+    </div>
+
+    <!-- Desktop Category Filters (Pills) -->
+    <nav class="category-pills-wrapper d-none d-md-flex align-items-center justify-content-center flex-wrap gap-2 mb-5" aria-label="Menu categories">
+        <button type="button" class="category-pill active" data-category="all" aria-pressed="true">
+            🍔 All Items
+        </button>
+        {% for category in categories %}
+            <button type="button" class="category-pill" data-category="{{ category.name|default:category }}" aria-pressed="false">
+                {{ category.name|default:category }}
+            </button>
+        {% endfor %}
+        <a href="{% url 'orders:cart_detail' %}" class="category-pill cart-pill ms-2 text-decoration-none d-inline-flex align-items-center gap-2" title="View Cart">
+            <span>🛒 View Cart</span>
+            <span class="cart-num-jtown" id="desktop-pill-cart-count">{{ cart_count|default:0 }}</span>
+        </a>
+    </nav>
+
+    <!-- Mobile Sticky Floating Action Bar (Filter Dropdown + Accessible Cart Button) -->
+    <div class="mobile-filter-container d-block d-md-none mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <!-- Filter Dropdown Trigger -->
+            <div class="mobile-filter-wrapper flex-grow-1 position-relative">
+                <button type="button" 
+                        id="category-dropdown-btn" 
+                        class="mobile-filter-trigger" 
+                        aria-haspopup="listbox" 
+                        aria-expanded="false" 
+                        aria-controls="category-dropdown-list"
+                        aria-label="Filter menu items by category">
+                    <span class="d-flex align-items-center gap-2 text-truncate">
+                        <span class="filter-icon" aria-hidden="true">🍔</span>
+                        <span class="filter-prefix mono-label">FILTER:</span>
+                        <span id="mobile-filter-selected-text" class="filter-current-text mono-label text-truncate">All Items</span>
+                    </span>
+                    <span class="dropdown-chevron" aria-hidden="true">▾</span>
+                </button>
+
+                <!-- Dropdown Menu / Listbox with proper ARIA & Viewport constraints -->
+                <ul id="category-dropdown-list" 
+                    class="mobile-filter-menu" 
+                    role="listbox" 
+                    aria-labelledby="category-dropdown-btn" 
+                    tabindex="-1">
+                    <li class="mobile-filter-option active" 
+                        role="option" 
+                        aria-selected="true" 
+                        tabindex="0" 
+                        data-category="all">
+                        <span class="option-icon" aria-hidden="true">🍔</span>
+                        <span class="option-text">All Items</span>
+                        <span class="option-check" aria-hidden="true">✓</span>
+                    </li>
+                    {% for category in categories %}
+                        <li class="mobile-filter-option" 
+                            role="option" 
+                            aria-selected="false" 
+                            tabindex="0" 
+                            data-category="{{ category.name|default:category }}">
+                            <span class="option-icon" aria-hidden="true">🍽️</span>
+                            <span class="option-text">{{ category.name|default:category }}</span>
+                            <span class="option-check" aria-hidden="true">✓</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Sticky Floating Mobile Cart Button (Floating & Accessible, Never Locked at Bottom) -->
+            <a href="{% url 'orders:cart_detail' %}" 
+               class="mobile-sticky-cart-btn text-decoration-none" 
+               aria-label="View Cart ({{ cart_count|default:0 }} items)"
+               title="View Cart">
+                <span class="mobile-cart-icon" aria-hidden="true">🛒</span>
+                <span class="mobile-cart-text mono-label">Cart</span>
+                <span class="cart-num-jtown" id="sticky-cart-count">{{ cart_count|default:0 }}</span>
+            </a>
         </div>
     </div>
 
-    <!-- Login Prompt Modal -->
-<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="loginModalLabel">Please Log In</h5>
+    <!-- Menu Items Grouped by Category with Progressive Rendering -->
+    <div id="menu-items">
+        {% for category, items in items_by_category %}
+            <section class="category-section mb-5" data-category="{{ category.name|default:category }}" aria-labelledby="cat-heading-{{ forloop.counter }}">
+                <h3 id="cat-heading-{{ forloop.counter }}" class="category-heading mb-3 mb-md-4">
+                    {{ category.name|default:category }}
+                </h3>
+                <div class="row g-3 g-md-4">
+                    {% for item in items %}
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 menu-item-container" data-category="{{ item.category_id.name }}">
+                            {% include 'components/menu_card.html' with item=item %}
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <p class="text-center text-ash py-4">No items found for {{ category.name|default:category }}.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Floating Cart Button for Desktop -->
+<aside class="floating-cart-container d-none d-md-block" aria-label="Cart shortcut">
+    <a href="{% url 'orders:cart_detail' %}" class="floating-cart-btn" id="floating-cart-btn" title="View Cart">
+        <span class="floating-cart-icon" aria-hidden="true">🛒</span>
+        <span class="floating-cart-text">View Cart</span>
+        <span class="floating-cart-badge cart-num-jtown" id="floating-cart-count">{{ cart_count|default:0 }}</span>
+    </a>
+</aside>
+
+<!-- Login Prompt Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-md); border: none;">
+            <div class="modal-header border-0 pb-0">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>You need to log in to add items to your cart. This allows you to track your orders and earn loyalty points!</p>
-                <!-- Optional: Guest checkout option -->
-                <!-- <p>Or, continue as a guest to add items without an account.</p> -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="{% url 'users:customer_send_otp' %}" class="btn btn-primary">Log In</a>
-                <!-- Optional: Guest checkout button -->
-                <!-- <button type="button" class="btn btn-outline-primary guest-checkout" data-item-id="">Continue as Guest</button> -->
+            <div class="modal-body text-center p-4">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🍔</div>
+                <h3 class="mb-3">Please Log In</h3>
+                <p class="text-ash mb-4">You need to log in to add items to your cart. This allows you to track your orders and earn loyalty points!</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'users:customer_send_otp' %}" class="btn-jtown-primary text-decoration-none">Log In</a>
+                    <button type="button" class="btn-jtown-outline" data-bs-dismiss="modal">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+    /* Category Section Performance Optimization */
+    .category-section {
+        content-visibility: auto;
+        contain-intrinsic-size: 1px 380px;
+    }
 
-    <script src="{% static 'core/js/menu.js' %}"></script>
+    .category-heading {
+        border-bottom: 1.5px solid rgba(15, 13, 10, 0.12);
+        padding-bottom: 10px;
+        font-size: 1.6rem;
+        letter-spacing: 0.04em;
+        color: var(--color-ink);
+    }
+
+    /* Clearance padding so floating cart never obscures bottom cards */
+    #menu-items {
+        padding-bottom: 110px;
+    }
+
+    /* Desktop Category Pills */
+    .category-pill {
+        background: #fff;
+        color: var(--color-ash);
+        border-radius: var(--radius-pill);
+        padding: 8px 20px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        border: 1.5px solid rgba(15, 13, 10, 0.1);
+        cursor: pointer;
+        transition: var(--transition-fast);
+        user-select: none;
+        touch-action: manipulation;
+    }
+    .category-pill:hover {
+        border-color: var(--color-ink);
+        color: var(--color-ink);
+    }
+    .category-pill.active {
+        background: var(--color-ink);
+        color: #fff;
+        border-color: var(--color-ink);
+    }
+
+    .category-pill.cart-pill {
+        background: var(--color-primary);
+        color: #fff;
+        border-color: var(--color-primary);
+    }
+
+    .category-pill.cart-pill:hover {
+        background: var(--color-primary-dark);
+        border-color: var(--color-primary-dark);
+        transform: translateY(-2px);
+    }
+
+    /* Accessible Mobile Dropdown Menu & Sticky Action Bar */
+    .mobile-filter-container {
+        position: sticky;
+        top: 12px;
+        z-index: 1020;
+    }
+
+    .mobile-sticky-cart-btn {
+        min-height: 48px;
+        padding: 10px 14px;
+        background-color: var(--color-primary);
+        color: #fff !important;
+        border: 1.5px solid var(--color-gold);
+        border-radius: var(--radius-md);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 16px rgba(232, 68, 10, 0.35);
+        transition: transform var(--transition-fast), background-color var(--transition-fast);
+        touch-action: manipulation;
+        flex-shrink: 0;
+    }
+
+    .mobile-sticky-cart-btn:hover {
+        background-color: var(--color-primary-dark);
+        color: #fff !important;
+    }
+
+    .mobile-sticky-cart-btn:active {
+        transform: scale(0.93);
+    }
+
+    .mobile-cart-icon {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .mobile-cart-text {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .mobile-filter-trigger {
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 18px;
+        background-color: var(--color-ink);
+        color: var(--color-paper);
+        border: 1.5px solid var(--color-primary);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(15, 13, 10, 0.18);
+        transition: var(--transition-fast);
+        touch-action: manipulation;
+    }
+
+    .mobile-filter-trigger:focus-visible {
+        outline: 2px solid var(--color-gold);
+        outline-offset: 2px;
+    }
+
+    .filter-icon {
+        font-size: 16px;
+    }
+
+    .filter-prefix {
+        font-size: 10px;
+        color: var(--color-gold);
+        letter-spacing: 0.08em;
+    }
+
+    .filter-current-text {
+        font-size: 12px;
+        color: var(--color-paper);
+        font-weight: 700;
+    }
+
+    .dropdown-chevron {
+        font-size: 14px;
+        color: var(--color-gold);
+        transition: transform var(--transition-fast);
+    }
+
+    .mobile-filter-trigger[aria-expanded="true"] .dropdown-chevron {
+        transform: rotate(180deg);
+    }
+
+    .mobile-filter-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        background-color: var(--color-ink);
+        border: 1.5px solid rgba(245, 240, 232, 0.15);
+        border-radius: var(--radius-md);
+        padding: 8px 0;
+        margin: 0;
+        list-style: none;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+        max-height: 52vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        display: none;
+    }
+
+    .mobile-filter-menu.show {
+        display: block;
+        animation: mobileDropdownSlide 180ms cubic-bezier(.4, 0, .2, 1);
+    }
+
+    @keyframes mobileDropdownSlide {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .mobile-filter-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 46px;
+        padding: 10px 18px;
+        color: var(--color-paper);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color var(--transition-fast);
+        outline: none;
+        user-select: none;
+    }
+
+    .mobile-filter-option:hover,
+    .mobile-filter-option:focus {
+        background-color: rgba(245, 240, 232, 0.08);
+        color: var(--color-gold);
+    }
+
+    .mobile-filter-option.active {
+        background-color: rgba(232, 68, 10, 0.18);
+        color: var(--color-gold);
+        font-weight: 700;
+    }
+
+    .option-check {
+        color: var(--color-gold);
+        font-weight: 700;
+        display: none;
+    }
+
+    .mobile-filter-option.active .option-check {
+        display: inline;
+    }
+
+    /* Floating Cart Button & Mobile Ergonomics */
+    .floating-cart-container {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        right: 20px;
+        z-index: 1040;
+        pointer-events: none;
+    }
+
+    .floating-cart-btn {
+        pointer-events: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background-color: var(--color-primary);
+        color: #fff !important;
+        text-decoration: none !important;
+        padding: 12px 22px;
+        border-radius: var(--radius-pill);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 8px 24px rgba(232, 68, 10, 0.45), 0 2px 8px rgba(15, 13, 10, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: transform var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+        touch-action: manipulation;
+        will-change: transform;
+    }
+
+    .floating-cart-btn:hover {
+        background-color: var(--color-primary-dark);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 12px 28px rgba(232, 68, 10, 0.55), 0 4px 10px rgba(15, 13, 10, 0.3);
+    }
+
+    .floating-cart-btn:active {
+        transform: translateY(0) scale(0.95);
+    }
+
+    .floating-cart-icon {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .floating-cart-text {
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .floating-cart-badge {
+        background-color: var(--color-gold);
+        color: var(--color-ink);
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: var(--radius-pill);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    @media (max-width: 576px) {
+        .floating-cart-container {
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            right: 16px;
+            left: 16px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .floating-cart-btn {
+            padding: 11px 20px;
+            font-size: 12px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const desktopPills = document.querySelectorAll('.category-pill');
+    const mobileDropdownBtn = document.getElementById('category-dropdown-btn');
+    const mobileDropdownList = document.getElementById('category-dropdown-list');
+    const mobileOptions = document.querySelectorAll('.mobile-filter-option');
+    const selectedTextElem = document.getElementById('mobile-filter-selected-text');
+    const categorySections = document.querySelectorAll('.category-section');
+
+    // Central Filter Activation Function
+    const applyCategoryFilter = (category, displayName) => {
+        // Sync Desktop Pills
+        desktopPills.forEach(pill => {
+            const matches = pill.getAttribute('data-category') === category;
+            pill.classList.toggle('active', matches);
+            pill.setAttribute('aria-pressed', matches ? 'true' : 'false');
+        });
+
+        // Sync Mobile Options
+        mobileOptions.forEach(opt => {
+            const matches = opt.getAttribute('data-category') === category;
+            opt.classList.toggle('active', matches);
+            opt.setAttribute('aria-selected', matches ? 'true' : 'false');
+        });
+
+        if (selectedTextElem && displayName) {
+            selectedTextElem.textContent = displayName;
+        }
+
+        // Filter category sections
+        categorySections.forEach(section => {
+            const secCat = section.getAttribute('data-category');
+            if (category === 'all' || secCat === category) {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        });
+    };
+
+    // Mobile Dropdown Open / Close State Management
+    const openDropdown = () => {
+        if (!mobileDropdownBtn || !mobileDropdownList) return;
+        mobileDropdownBtn.setAttribute('aria-expanded', 'true');
+        mobileDropdownList.classList.add('show');
+        document.body.classList.add('menu-scroll-locked');
+        
+        // Focus active option or first option
+        const activeOpt = mobileDropdownList.querySelector('.mobile-filter-option.active') || mobileDropdownList.querySelector('.mobile-filter-option');
+        if (activeOpt) activeOpt.focus();
+    };
+
+    const closeDropdown = (returnFocus = false) => {
+        if (!mobileDropdownBtn || !mobileDropdownList) return;
+        mobileDropdownBtn.setAttribute('aria-expanded', 'false');
+        mobileDropdownList.classList.remove('show');
+        document.body.classList.remove('menu-scroll-locked');
+        if (returnFocus) {
+            mobileDropdownBtn.focus();
+        }
+    };
+
+    if (mobileDropdownBtn && mobileDropdownList) {
+        mobileDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = mobileDropdownBtn.getAttribute('aria-expanded') === 'true';
+            if (isOpen) {
+                closeDropdown();
+            } else {
+                openDropdown();
+            }
+        });
+
+        // Mobile Option Selection
+        mobileOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                const category = opt.getAttribute('data-category');
+                const optText = opt.querySelector('.option-text')?.textContent || category;
+                applyCategoryFilter(category, optText);
+                closeDropdown(true);
+            });
+        });
+
+        // Outside Click Dismissal
+        document.addEventListener('pointerdown', (e) => {
+            const isClickInside = mobileDropdownBtn.contains(e.target) || mobileDropdownList.contains(e.target);
+            if (!isClickInside && mobileDropdownList.classList.contains('show')) {
+                closeDropdown();
+            }
+        });
+
+        // Keyboard Navigation Support (Escape, ArrowUp, ArrowDown, Enter, Space)
+        mobileDropdownList.addEventListener('keydown', (e) => {
+            const optionsArray = Array.from(mobileOptions);
+            const currentIndex = optionsArray.indexOf(document.activeElement);
+
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeDropdown(true);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % optionsArray.length;
+                optionsArray[nextIndex].focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + optionsArray.length) % optionsArray.length;
+                optionsArray[prevIndex].focus();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (document.activeElement && document.activeElement.classList.contains('mobile-filter-option')) {
+                    document.activeElement.click();
+                }
+            }
+        });
+
+        mobileDropdownBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openDropdown();
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+    }
+
+    // Desktop Pill Click Handlers
+    desktopPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            const category = pill.getAttribute('data-category');
+            const displayName = pill.textContent.trim().replace(/^🍔\s*/, '');
+            applyCategoryFilter(category, displayName);
+        });
+    });
+});
+</script>
 {% endblock %}
