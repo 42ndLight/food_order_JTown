@@ -11,34 +11,60 @@
     <div class="row g-4">
         <div class="col-md-8">
             <div class="card p-4 h-100" style="background: #fff; border-radius: var(--radius-md); border: 1.5px solid rgba(15,13,10,.08);">
-                <h3 class="mb-4">Order Information</h3>
-                <form method="POST">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h3 class="mb-1">Delivery Location</h3>
+                        <p class="text-ash mb-0" style="font-size: 12px;">Enter your delivery location or auto-detect with your device</p>
+                    </div>
+                    <button id="use-current-location" type="button" class="btn-jtown-primary" style="font-size: 11px; padding: 7px 15px;">
+                        📍 Use My Location
+                    </button>
+                </div>
+
+                <div id="location-status" class="mono-label mb-3 p-2 rounded" style="font-size: 11px; display: none; background: rgba(15,13,10,0.04);"></div>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger mono-label py-2 mb-4" style="font-size: 11px; border-radius: var(--radius-sm);">
+                        <strong>Please correct the following:</strong>
+                        <ul class="mb-0 mt-1 ps-3">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <form method="POST" id="checkout-form">
                     {% csrf_token %}
-                    <!-- We display the info captured in the cart but allow refinement if needed -->
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">BUILDING NAME</label>
-                            {{ order_form.building_name }}
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">BUILDING NAME / APARTMENT</label>
+                            {{ form.building_name }}
                         </div>
                         <div class="col-md-6">
                             <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">STREET</label>
-                            {{ order_form.street }}
+                            {{ form.street }}
                         </div>
                         <div class="col-12">
-                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">DETAILED ADDRESS</label>
-                            {{ order_form.address }}
+                            <label class="mono-label" style="font-size: 11px; color: var(--color-ash);">DETAILED ADDRESS / ROOM / LANDMARK</label>
+                            {{ form.address }}
                         </div>
                         
                         <!-- Hidden fields -->
-                        {{ order_form.user }}
-                        {{ order_form.latitude }}
-                        {{ order_form.longitude }}
-                        {{ order_form.delivery_fee }}
+                        {{ form.user }}
+                        {{ form.latitude }}
+                        {{ form.longitude }}
+                        {{ form.delivery_fee }}
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mt-5">
                         <a href="{% url 'orders:cart_detail' %}" class="btn-jtown-outline text-decoration-none">Back to Cart</a>
-                        <button type="submit" class="btn-jtown-secondary">Confirm & Pay →</button>
+                        <button type="submit" class="btn-jtown-secondary border-0">Confirm & Pay →</button>
                     </div>
                 </form>
             </div>
@@ -46,22 +72,28 @@
         
         <div class="col-md-4">
             <div class="card p-4" style="background: var(--color-ink); color: var(--color-paper); border-radius: var(--radius-md); border: none;">
-                <h3 class="mb-4" style="color: var(--color-paper);">Summary</h3>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0" style="color: var(--color-paper);">Summary</h3>
+                    {% if phone_number %}
+                        <div class="mono-label text-gold" style="font-size: 11px;">
+                            📞 {{ phone_number }}
+                        </div>
+                    {% endif %}
+                </div>
                 
                 <div class="d-flex justify-content-between mb-2">
                     <span class="mono-label text-ash">Items Total</span>
-                    <span class="mono-label">KES {{ cart_total }}</span>
+                    <span class="mono-label" id="summary-items-total">KES {{ cart_subtotal|floatformat:2 }}</span>
                 </div>
                 
                 <div class="d-flex justify-content-between mb-3 pb-3 border-bottom" style="border-color: rgba(245,240,232,0.1) !important;">
                     <span class="mono-label text-ash">Delivery Fee</span>
-                    <!-- Note: We'll need a way to pass the delivery fee here if it's dynamic -->
-                    <span class="mono-label" id="checkout-delivery-fee">KES 150.00</span>
+                    <span class="mono-label" id="summary-delivery-fee">KES {{ delivery_fee|floatformat:2 }}</span>
                 </div>
 
                 <div class="d-flex justify-content-between mb-4">
                     <span class="mono-label" style="color: var(--color-gold);">Grand Total</span>
-                    <span class="display-title" id="checkout-grand-total" style="font-size: 1.5rem; color: var(--color-gold);">KES {{ cart_total }}</span>
+                    <span class="display-title" id="summary-grand-total" style="font-size: 1.5rem; color: var(--color-gold);">KES {{ grand_total|floatformat:2 }}</span>
                 </div>
 
                 <div class="p-3" style="background: rgba(245,240,232,0.05); border-radius: var(--radius-sm);">
@@ -73,24 +105,7 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Simple logic to sync the summary total with the hidden delivery fee field
-        const feeInput = document.querySelector('input[name="delivery_fee"]');
-        const subtotal = parseFloat("{{ cart_total }}");
-        const grandTotalElem = document.getElementById('checkout-grand-total');
-        const feeDisplay = document.getElementById('checkout-delivery-fee');
-
-        if (feeInput && feeInput.value) {
-            const fee = parseFloat(feeInput.value);
-            feeDisplay.textContent = `KES ${fee.toFixed(2)}`;
-            grandTotalElem.textContent = `KES ${(subtotal + fee).toFixed(2)}`;
-        }
-    });
-</script>
-
 <style>
-    /* Style form controls to match design system */
     input[type="text"], input[type="tel"], textarea, select {
         width: 100%;
         padding: 10px 14px;
@@ -106,4 +121,102 @@
         background-color: #fff;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('use-current-location');
+    const status = document.getElementById('location-status');
+    const buildingInput = document.getElementById('id_building_name');
+    const streetInput = document.getElementById('id_street');
+    const addressInput = document.getElementById('id_address');
+    const latInput = document.getElementById('id_latitude');
+    const lngInput = document.getElementById('id_longitude');
+    const feeInput = document.getElementById('id_delivery_fee');
+
+    const subtotal = parseFloat("{{ cart_subtotal|default:0 }}");
+    const STANDARD_DELIVERY_FEE = 50.00;
+
+    const updateTotals = (fee) => {
+        const deliveryFeeElem = document.getElementById('summary-delivery-fee');
+        const grandTotalElem = document.getElementById('summary-grand-total');
+        
+        if (deliveryFeeElem) deliveryFeeElem.textContent = `KES ${fee.toFixed(2)}`;
+        if (grandTotalElem) grandTotalElem.textContent = `KES ${(subtotal + fee).toFixed(2)}`;
+        
+        if (feeInput) feeInput.value = fee.toFixed(2);
+    };
+
+    // If initial delivery fee is > 0 or address already filled, reflect it
+    if (parseFloat(feeInput.value || 0) > 0) {
+        updateTotals(parseFloat(feeInput.value));
+    } else if (buildingInput.value || streetInput.value || addressInput.value) {
+        updateTotals(STANDARD_DELIVERY_FEE);
+    }
+
+    if (btn) {
+        btn.addEventListener('click', () => {
+            status.style.display = 'block';
+            status.style.color = 'var(--color-ash)';
+            status.textContent = '📍 Detecting your location...';
+
+            if (!navigator.geolocation) {
+                status.style.color = '#c0392b';
+                status.textContent = '❌ Geolocation is not supported by your browser.';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    if (latInput) latInput.value = lat;
+                    if (lngInput) lngInput.value = lng;
+
+                    status.textContent = '📍 Location detected. Getting address details...';
+
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+                        const data = await response.json();
+                        
+                        if (data && data.address) {
+                            const addr = data.address;
+                            if (streetInput) streetInput.value = addr.road || addr.suburb || addr.neighbourhood || '';
+                            if (addressInput) addressInput.value = data.display_name || '';
+                            if (buildingInput && (addr.building || addr.house_name)) {
+                                buildingInput.value = addr.building || addr.house_name;
+                            }
+                        }
+                        
+                        updateTotals(STANDARD_DELIVERY_FEE);
+                        status.style.color = '#27ae60';
+                        status.textContent = '✅ Location details updated! Standard delivery fee applied.';
+                    } catch (error) {
+                        console.error('Reverse geocoding error:', error);
+                        updateTotals(STANDARD_DELIVERY_FEE);
+                        status.style.color = 'var(--color-ink)';
+                        status.textContent = '📍 GPS coordinates captured. Please fill in street/building manually.';
+                    }
+                },
+                (error) => {
+                    status.style.color = '#c0392b';
+                    status.textContent = '❌ Geolocation error: ' + error.message + '. Please enter address manually.';
+                },
+                { timeout: 10000, enableHighAccuracy: true }
+            );
+        });
+    }
+
+    // When typing address manually, ensure delivery fee is set
+    const manualInputs = [buildingInput, streetInput, addressInput];
+    manualInputs.forEach(input => {
+        if (input) {
+            input.addEventListener('input', () => {
+                if (parseFloat(feeInput.value || 0) === 0 && (buildingInput.value || streetInput.value || addressInput.value)) {
+                    updateTotals(STANDARD_DELIVERY_FEE);
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

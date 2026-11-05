@@ -5,7 +5,8 @@ from django.http import HttpResponse, JsonResponse
 from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy, reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
@@ -18,7 +19,9 @@ from orders.views import get_cart
 logger = logging.getLogger(__name__)
 
 # Initialize Daraja client
-class MpesaPaymentView(View):
+class MpesaPaymentView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('users:customer_send_otp')
+
     def get(self, request, *args, **kwargs):
         """Initiate M-Pesa STK push payment"""
         try:
@@ -55,8 +58,10 @@ class MpesaPaymentView(View):
             cl = MpesaClient()
             account_reference = f"Order-{order.id}"
             transaction_desc = f"Payment for Order {order.id}"
-            callback_url = f"{settings.MPESA_CALLBACK_URL}/pay"
-            logger.info(f"Initiating M-Pesa payment: Order={order.id}, Amount={amount}, Phone={phone_number}")
+            callback_path = reverse('payments:mpesa-callback')
+            base_url = settings.MPESA_CALLBACK_URL.rstrip('/') if settings.MPESA_CALLBACK_URL else request.build_absolute_uri('/')[:-1]
+            callback_url = f"{base_url}{callback_path}"
+            logger.info(f"Initiating M-Pesa payment: Order={order.id}, Amount={amount}, Phone={phone_number}, Callback={callback_url}")
             
             
             try:
@@ -71,32 +76,38 @@ class MpesaPaymentView(View):
                 logger.debug(f"Response type: {type(response)}")
                 logger.debug(f"Response object: {response}")
                 
-                # Handle different response types
-                if hasattr(response, 'response_data'):
-                    response_data = response.response_data
+                # Handle different response types from django_daraja
+                # MpesaResponse has snake_case attrs: response_code, checkout_request_id
+                # Also normalise PascalCase dict keys from raw JSON responses
+                if isinstance(response, dict):
+                    response_data = response
                 elif hasattr(response, '__dict__'):
                     response_data = response.__dict__
-                elif isinstance(response, dict):
-                    response_data = response
                 else:
-                    # Try to convert to dict
                     try:
                         response_data = vars(response)
-                    except:
+                    except Exception:
                         response_data = {}
                 
                 logger.debug(f"M-Pesa Response Data: {response_data}")
                 
-                # Check response code
-                response_code = str(response_data.get('ResponseCode', ''))
+                # Check response code - support both PascalCase (raw JSON) and snake_case (MpesaResponse attrs)
+                response_code = str(
+                    response_data.get('ResponseCode') or
+                    response_data.get('response_code') or
+                    ''
+                )
                 
                 if response_code == '0':
-                    checkout_request_id = response_data.get('CheckoutRequestID')
+                    checkout_request_id = (
+                        response_data.get('CheckoutRequestID') or
+                        response_data.get('checkout_request_id')
+                    )
                     
                     if not checkout_request_id:
                         logger.error("No CheckoutRequestID in successful response")
                         messages.error(request, "Payment initiation failed. Please try again.")
-                        return redirect('orders:checkout')
+                        return redirect('orders:order_create')
                     
                     # Create MpesaTransaction record
                     mpesa_transaction = MpesaTransaction.objects.create(
@@ -126,11 +137,20 @@ class MpesaPaymentView(View):
                     # Handle API error
                     error_message = (
                         response_data.get('errorMessage') or 
-                        response_data.get('CustomerMessage') or 
+                        response_data.get('error_message') or
+                        response_data.get('CustomerMessage') or
+                        response_data.get('customer_message') or
                         response_data.get('ResponseDescription') or
+                        response_data.get('response_description') or
                         'Payment initiation failed'
                     )
-                    error_code = response_data.get('errorCode') or response_data.get('ResponseCode', 'Unknown')
+                    error_code = (
+                        response_data.get('errorCode') or
+                        response_data.get('error_code') or
+                        response_data.get('ResponseCode') or
+                        response_data.get('response_code') or
+                        'Unknown'
+                    )
                     
                     logger.error(f"M-Pesa API Error: Code={error_code}, Message={error_message}")
                     logger.error(f"Full response: {response_data}")

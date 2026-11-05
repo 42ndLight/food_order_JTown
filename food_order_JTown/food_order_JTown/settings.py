@@ -33,7 +33,8 @@ SECRET_KEY = os.environ.get('KEY_SEC')
 DEBUG = os.environ.get('DEBUG')
 
 ALLOWED_HOSTS =['.ngrok-free.app', '127.0.0.1',]
-#CSRF_TRUSTED_ORIGINS = ['https://bd3d733a4bd1.ngrok-free.app']
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ["https://bd3d733a4bd1.ngrok-free.app", "http://127.0.0.1:8000", "http://localhost:8000"]
 
 
 

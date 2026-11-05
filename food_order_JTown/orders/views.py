@@ -1,5 +1,6 @@
 from django.views import View
 from django.views.generic import TemplateView, CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.urls import reverse_lazy
@@ -8,6 +9,7 @@ from .models import Order, OrderItem
 from core.models import MenuItem
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
+from decimal import Decimal
 import logging
 
 logger = logging.getLogger(__name__)
@@ -87,52 +89,82 @@ def clear_cart(request):
     return redirect("core:menu")
 
 # --- 3. Checkout / Create Order ---
-class OrderCreateView(CreateView):
+class OrderCreateView(LoginRequiredMixin, CreateView):
     model = Order
     form_class = OrderForm
     template_name = "orders/checkout.html"
-    success_url = reverse_lazy("payments:mpesapush")  # Redirect to payment initiation
+    login_url = reverse_lazy('users:customer_send_otp')
+    success_url = reverse_lazy("payments:mpesa-push")
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.request.user.is_authenticated:
+            initial['user'] = self.request.user
+        initial['delivery_fee'] = Decimal('0.00')
+        return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         cart = get_cart(self.request)
-        cart_total = sum(float(item["price"]) * item["quantity"] for item in cart) if cart else 0
+        cart_subtotal = sum(float(item["price"]) * item["quantity"] for item in cart) if cart else 0
+        delivery_fee = 0.00
+        
         context.update({
-            'cart_total': cart_total,
+            'order_form': context.get('form'),
+            'cart_subtotal': cart_subtotal,
+            'delivery_fee': delivery_fee,
+            'grand_total': cart_subtotal + delivery_fee,
             'phone_number': self.request.user.phone_no if self.request.user.is_authenticated else None,
         })
         return context
 
+    def form_invalid(self, form):
+        logger.error(f"Order form invalid: {form.errors.as_json()}")
+        messages.error(self.request, "Please check the delivery details and try again.")
+        return super().form_invalid(form)
+
     def form_valid(self, form):
         cart = get_cart(self.request)
-        logger.info(f"Valid form: cart={cart}")
         if not cart:
             messages.error(self.request, "Cart is empty.")
             return redirect("orders:cart_detail")
 
         order = form.save(commit=False)
         
-        # Capture location fields from POST
-        order.address = self.request.POST.get('address', '')
-        order.building_name = self.request.POST.get('building_name', '')
-        order.street = self.request.POST.get('street', '')
+        # Capture location fields from form / POST
+        order.address = form.cleaned_data.get('address') or self.request.POST.get('address', order.address)
+        order.building_name = form.cleaned_data.get('building_name') or self.request.POST.get('building_name', order.building_name)
+        order.street = form.cleaned_data.get('street') or self.request.POST.get('street', order.street)
         
-        try:
-            order.latitude = self.request.POST.get('latitude') or None
-            order.longitude = self.request.POST.get('longitude') or None
-            order.delivery_fee = float(self.request.POST.get('delivery_fee', 0))
-        except (ValueError, TypeError):
-            order.delivery_fee = 0
+        raw_lat = form.cleaned_data.get('latitude') or self.request.POST.get('latitude')
+        raw_lng = form.cleaned_data.get('longitude') or self.request.POST.get('longitude')
+        raw_fee = form.cleaned_data.get('delivery_fee') or self.request.POST.get('delivery_fee')
+
+        if raw_lat:
+            try:
+                order.latitude = Decimal(str(raw_lat))
+            except (ValueError, TypeError, ArithmeticError):
+                pass
+        if raw_lng:
+            try:
+                order.longitude = Decimal(str(raw_lng))
+            except (ValueError, TypeError, ArithmeticError):
+                pass
+        if raw_fee:
+            try:
+                order.delivery_fee = Decimal(str(raw_fee))
+            except (ValueError, TypeError, ArithmeticError):
+                order.delivery_fee = Decimal('0.00')
+        else:
+            order.delivery_fee = Decimal('0.00')
 
         if self.request.user.is_authenticated:
             order.user = self.request.user
             
-        # Calculate total including delivery fee
-        cart_subtotal = sum(float(item["price"]) * item["quantity"] for item in cart)
+        cart_subtotal = sum(Decimal(str(item["price"])) * item["quantity"] for item in cart)
         order.total_price = cart_subtotal + order.delivery_fee
         order.status = 'pending'
         
-        logger.debug(f"Order created: {order.id}, total={order.total_price}, fee={order.delivery_fee}")
         order.save()
 
         # Create OrderItems
@@ -148,9 +180,12 @@ class OrderCreateView(CreateView):
         self.request.session['pending_order_id'] = order.id
         self.request.session['order_total'] = str(order.total_price)
         self.request.session['order_phone'] = self.request.user.phone_no
-        logger.debug(f"Valid form: order_id={order.id}, total_price={order.total_price}")
-
-        save_cart(self.request, [])  # Clear cart
+        
+        # Clear cart
+        save_cart(self.request, [])
+        if 'delivery_info' in self.request.session:
+            del self.request.session['delivery_info']
+            
         messages.success(self.request, "Order placed successfully!")
         return super().form_valid(form)
 

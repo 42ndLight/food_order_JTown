@@ -49,6 +49,11 @@ body {
     line-height: 1.6;
 }
 
+body.menu-scroll-locked {
+    overflow: hidden !important;
+    touch-action: none !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-section);
     text-transform: uppercase;
@@ -157,9 +162,17 @@ h1, h2, h3, h4, h5, h6 {
 /* Navbar Styles */
 .navbar-jtown {
     background-color: var(--color-ink);
-    height: 64px;
     border-bottom: 2px solid var(--color-primary);
-    padding: 0 16px;
+    padding: 10px 16px;
+    position: relative;
+    z-index: 1030;
+}
+
+@media (min-width: 992px) {
+    .navbar-jtown {
+        height: 64px;
+        padding: 0 20px;
+    }
 }
 
 .navbar-brand-jtown {
@@ -169,6 +182,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 8px;
     font-size: 18px;
+    letter-spacing: 0.05em;
 }
 
 .live-dot {
@@ -186,6 +200,116 @@ h1, h2, h3, h4, h5, h6 {
     100% { transform: scale(0.95); opacity: 0.7; }
 }
 
+.navbar-toggler-jtown {
+    border: 1.5px solid rgba(245, 240, 232, 0.3) !important;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+}
+
+.navbar-toggler-jtown:focus {
+    box-shadow: none;
+    border-color: var(--color-gold) !important;
+}
+
+.navbar-toggler-jtown .navbar-toggler-icon {
+    filter: invert(1);
+}
+
+.nav-link-jtown {
+    color: var(--color-paper) !important;
+    font-size: 12px;
+    font-weight: 500;
+    transition: var(--transition-fast);
+    padding: 8px 12px !important;
+    border-radius: var(--radius-sm);
+}
+
+.nav-link-jtown:hover,
+.nav-link-jtown:focus {
+    color: var(--color-gold) !important;
+    background-color: rgba(245, 240, 232, 0.06);
+}
+
+.nav-login-btn {
+    color: var(--color-paper) !important;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid rgba(245, 240, 232, 0.25);
+    transition: var(--transition-fast);
+}
+
+.nav-login-btn:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold) !important;
+    background-color: rgba(242, 168, 50, 0.08);
+}
+
+.user-menu-toggle {
+    color: var(--color-paper) !important;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(245, 240, 232, 0.15);
+    background-color: rgba(245, 240, 232, 0.05);
+    transition: var(--transition-fast);
+}
+
+.user-menu-toggle:hover {
+    color: var(--color-gold) !important;
+    border-color: var(--color-gold);
+}
+
+.dropdown-menu-jtown {
+    background-color: var(--color-smoke) !important;
+    border: 1.5px solid rgba(245, 240, 232, 0.15) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 8px 0;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dropdown-menu-jtown .dropdown-item {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-paper) !important;
+    padding: 9px 18px;
+    transition: var(--transition-fast);
+}
+
+.dropdown-menu-jtown .dropdown-item:hover {
+    background-color: var(--color-ink) !important;
+    color: var(--color-gold) !important;
+}
+
+.dropdown-menu-jtown .dropdown-divider {
+    border-color: rgba(245, 240, 232, 0.12) !important;
+}
+
+/* Mobile Drawer Styling */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background-color: var(--color-ink) !important;
+        border-top: 1px solid rgba(245, 240, 232, 0.12);
+        margin-top: 10px;
+        padding: 16px 12px 20px;
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    .navbar-nav-actions {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(245, 240, 232, 0.1);
+        flex-wrap: wrap;
+    }
+
+    .nav-link-jtown {
+        font-size: 13px;
+        padding: 10px 14px !important;
+    }
+}
+
 .cart-badge-jtown {
     background-color: var(--color-primary);
     color: #fff;
@@ -197,6 +321,13 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+.cart-badge-jtown:hover {
+    background-color: var(--color-primary-dark);
+    color: #fff;
+    transform: scale(1.02);
 }
 
 .cart-num-jtown {
